@@ -106,6 +106,43 @@ namespace LRS.SceneManagement
 			AutoUpdateReference();
 #endif
 		}
+		
+		public static bool operator ==(SceneReference a, SceneReference b)
+		{
+			if (ReferenceEquals(a, b))
+				return true;
+
+			if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
+				return false;
+
+			return a.ScenePath == b.ScenePath;
+		}
+
+		public static bool operator !=(SceneReference a, SceneReference b)
+		{
+			return !(a == b);
+		}
+		
+		public override bool Equals(object obj)
+		{
+			if (ReferenceEquals(this, obj))
+				return true;
+
+			if (ReferenceEquals(null, obj))
+				return false;
+
+			return obj.GetType() == GetType() && Equals((SceneReference)obj);
+		}
+
+		protected bool Equals(SceneReference other)
+		{
+			return Equals(m_SceneAsset, other.m_SceneAsset) && m_IsDirty == other.m_IsDirty && m_ScenePath == other.m_ScenePath;
+		}
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(m_SceneAsset, m_IsDirty, m_ScenePath);
+		}
 
 #if UNITY_EDITOR
 		private static bool s_ReloadingAssemblies = false;

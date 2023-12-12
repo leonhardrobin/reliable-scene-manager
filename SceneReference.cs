@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using System.Linq;
 using System.IO;
+using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -142,6 +143,16 @@ namespace LRS.SceneManagement
 		public override int GetHashCode()
 		{
 			return HashCode.Combine(m_SceneAsset, m_IsDirty, m_ScenePath);
+		}
+
+		public bool IsValid()
+		{
+			return !string.IsNullOrEmpty(m_ScenePath) && SceneManager.GetSceneByPath(m_ScenePath).IsValid();
+		}
+		
+		public bool IsLoaded()
+		{
+			return !string.IsNullOrEmpty(m_ScenePath) && SceneManager.GetSceneByPath(m_ScenePath).isLoaded;
 		}
 
 #if UNITY_EDITOR

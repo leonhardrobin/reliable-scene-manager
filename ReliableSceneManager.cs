@@ -205,7 +205,7 @@ namespace LRS.SceneManagement
         
         #endregion
         
-        #region Utiliy Methods
+        #region Create Scene Reference
         
         public static SceneReference SceneReferenceFrom(Scene scene)
         {
@@ -220,6 +220,40 @@ namespace LRS.SceneManagement
         public static SceneReference SceneReferenceFrom(int sceneBuildIndex)
         {
             return new SceneReference(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).path);
+        }
+        
+        #endregion
+        
+        #region Check Scene
+        
+        public static bool IsSceneLoaded(SceneReference scene)
+        {
+            return scene.IsLoaded();
+        }
+        
+        public static bool IsSceneLoaded(string sceneName)
+        {
+            return SceneManager.GetSceneByName(sceneName).isLoaded;
+        }
+        
+        public static bool IsSceneLoaded(int sceneBuildIndex)
+        {
+            return SceneManager.GetSceneByBuildIndex(sceneBuildIndex).isLoaded;
+        }
+        
+        public static bool IsSceneValid(SceneReference scene)
+        {
+            return scene.IsValid();
+        }
+        
+        public static bool IsSceneValid(string sceneName)
+        {
+            return SceneManager.GetSceneByName(sceneName).IsValid();
+        }
+        
+        public static bool IsSceneValid(int sceneBuildIndex)
+        {
+            return SceneManager.GetSceneByBuildIndex(sceneBuildIndex).IsValid();
         }
         
         #endregion

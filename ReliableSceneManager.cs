@@ -255,6 +255,19 @@ namespace LRS.SceneManagement
         {
             return SceneManager.GetSceneByBuildIndex(sceneBuildIndex).IsValid();
         }
+
+        public static bool IsSceneActive(SceneReference scene)
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene loadedScene = SceneManager.GetSceneAt(i);
+                if (loadedScene.path == scene.ScenePath)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         
         #endregion
     }

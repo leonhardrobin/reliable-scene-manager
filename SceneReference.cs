@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.IO;
@@ -31,23 +32,40 @@ namespace LRS.SceneManagement
 	[Serializable]
 	public class SceneReference : ISerializationCallbackReceiver
 	{
+		public SceneReference() { }
+
+		public SceneReference(string scenePath)
+		{
+			ScenePath = scenePath;
+		}
+
+		public SceneReference(SceneReference other)
+		{
+			scenePath = other.scenePath;
+
+#if UNITY_EDITOR
+			sceneAsset = other.sceneAsset;
+			isDirty = other.isDirty;
+
+			AutoUpdateReference();
+#endif
+		}
 
 #if UNITY_EDITOR
 		// Reference to the asset used in the editor. Player builds don't know about SceneAsset.
 		// Will be used to update the scene path.
-		[SerializeField] private SceneAsset m_SceneAsset;
+		[SerializeField] private SceneAsset sceneAsset;
 
 #pragma warning disable 0414 // Never used warning - will be used by SerializedProperty.
 		// Used to dirtify the data when needed upon displaying in the inspector.
 		// Otherwise the user will never get the changes to save (unless he changes any other field of the object / scene).
-		[SerializeField] private bool m_IsDirty;
+		[SerializeField] private bool isDirty;
 #pragma warning restore 0414
 #endif
 
 		// Player builds will use the path stored here. Should be updated in the editor or during build.
 		// If scene is deleted, path will remain.
-		[SerializeField]
-		private string m_ScenePath = string.Empty;
+		[SerializeField] private string scenePath = string.Empty;
 
 
 		/// <summary>
@@ -62,20 +80,20 @@ namespace LRS.SceneManagement
 				AutoUpdateReference();
 #endif
 
-				return m_ScenePath;
+				return scenePath;
 			}
 
 			set {
-				m_ScenePath = value;
+				scenePath = value;
 
 #if UNITY_EDITOR
-				if (string.IsNullOrEmpty(m_ScenePath)) {
-					m_SceneAsset = null;
+				if (string.IsNullOrEmpty(scenePath)) {
+					sceneAsset = null;
 					return;
 				}
 
-				m_SceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(m_ScenePath);
-				if (m_SceneAsset == null) {
+				sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
+				if (sceneAsset == null) {
 					Debug.LogError($"Setting {nameof(SceneReference)} to {value}, but no scene could be located there.");
 				}
 #endif
@@ -89,25 +107,6 @@ namespace LRS.SceneManagement
 
 		public bool IsEmpty => string.IsNullOrEmpty(ScenePath);
 
-		public SceneReference() { }
-
-		public SceneReference(string scenePath)
-		{
-			ScenePath = scenePath;
-		}
-
-		public SceneReference(SceneReference other)
-		{
-			m_ScenePath = other.m_ScenePath;
-
-#if UNITY_EDITOR
-			m_SceneAsset = other.m_SceneAsset;
-			m_IsDirty = other.m_IsDirty;
-
-			AutoUpdateReference();
-#endif
-		}
-		
 		public static bool operator ==(SceneReference a, SceneReference b)
 		{
 			if (ReferenceEquals(a, b))
@@ -137,26 +136,26 @@ namespace LRS.SceneManagement
 
 		protected bool Equals(SceneReference other)
 		{
-			return Equals(m_SceneAsset, other.m_SceneAsset) && m_IsDirty == other.m_IsDirty && m_ScenePath == other.m_ScenePath;
+			return Equals(sceneAsset, other.sceneAsset) && isDirty == other.isDirty && scenePath == other.scenePath;
 		}
 
 		public override int GetHashCode()
 		{
-			return HashCode.Combine(m_SceneAsset, m_IsDirty, m_ScenePath);
+			return HashCode.Combine(sceneAsset, isDirty, scenePath);
 		}
 
 		public bool IsValid()
 		{
-			return !string.IsNullOrEmpty(m_ScenePath) && SceneManager.GetSceneByPath(m_ScenePath).IsValid();
+			return !string.IsNullOrEmpty(scenePath) && SceneManager.GetSceneByPath(scenePath).IsValid();
 		}
 		
 		public bool IsLoaded()
 		{
-			return !string.IsNullOrEmpty(m_ScenePath) && SceneManager.GetSceneByPath(m_ScenePath).isLoaded;
+			return !string.IsNullOrEmpty(scenePath) && SceneManager.GetSceneByPath(scenePath).isLoaded;
 		}
 
 #if UNITY_EDITOR
-		private static bool s_ReloadingAssemblies = false;
+		private static bool _reloadingAssemblies = false;
 
 		static SceneReference()
 		{
@@ -165,7 +164,7 @@ namespace LRS.SceneManagement
 
 		private static void OnBeforeAssemblyReload()
 		{
-			s_ReloadingAssemblies = true;
+			_reloadingAssemblies = true;
 		}
 #endif
 
@@ -173,7 +172,7 @@ namespace LRS.SceneManagement
 
 		public override string ToString()
 		{
-			return m_ScenePath;
+			return scenePath;
 		}
 
 		[Obsolete("Needed for the editor, don't use it in runtime code!", true)]
@@ -182,7 +181,7 @@ namespace LRS.SceneManagement
 #if UNITY_EDITOR
 			// In rare cases this error may be logged when trying to change SceneReference while assembly is reloading:
 			// "Objects are trying to be loaded during a domain backup. This is not allowed as it will lead to undefined behaviour!"
-			if (s_ReloadingAssemblies)
+			if (_reloadingAssemblies)
 				return;
 
 			AutoUpdateReference();
@@ -209,14 +208,14 @@ namespace LRS.SceneManagement
 
 		private void AutoUpdateReference()
 		{
-			if (m_SceneAsset == null) {
-				if (string.IsNullOrEmpty(m_ScenePath))
+			if (sceneAsset == null) {
+				if (string.IsNullOrEmpty(scenePath))
 					return;
 
-				SceneAsset foundAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(m_ScenePath);
+				SceneAsset foundAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
 				if (foundAsset) {
-					m_SceneAsset = foundAsset;
-					m_IsDirty = true;
+					sceneAsset = foundAsset;
+					isDirty = true;
 
 					if (!Application.isPlaying) {
 						// NOTE: This doesn't work for scriptable objects, hence the m_IsDirty.
@@ -224,13 +223,13 @@ namespace LRS.SceneManagement
 					}
 				}
 			} else {
-				string foundPath = AssetDatabase.GetAssetPath(m_SceneAsset);
+				string foundPath = AssetDatabase.GetAssetPath(sceneAsset);
 				if (string.IsNullOrEmpty(foundPath))
 					return;
 
-				if (foundPath != m_ScenePath) {
-					m_ScenePath = foundPath;
-					m_IsDirty = true;
+				if (foundPath != scenePath) {
+					scenePath = foundPath;
+					isDirty = true;
 
 					if (!Application.isPlaying) {
 						// NOTE: This doesn't work for scriptable objects, hence the m_IsDirty.
@@ -253,7 +252,7 @@ namespace LRS.SceneManagement
 	{
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			var isDirtyProperty = property.FindPropertyRelative("m_IsDirty");
+			SerializedProperty isDirtyProperty = property.FindPropertyRelative("isDirty");
 			if (isDirtyProperty.boolValue) {
 				isDirtyProperty.boolValue = false;
 				// This will force change in the property and make it dirty.
@@ -273,21 +272,20 @@ namespace LRS.SceneManagement
 			buildSettingsPos.x += position.width - buildSettingsWidth + padding;
 			buildSettingsPos.width = buildSettingsWidth;
 
-			var sceneAssetProperty = property.FindPropertyRelative("m_SceneAsset");
+			SerializedProperty sceneAssetProperty = property.FindPropertyRelative("sceneAsset");
 			bool hadReference = sceneAssetProperty.objectReferenceValue != null;
 
 			EditorGUI.PropertyField(assetPos, sceneAssetProperty, new GUIContent());
 
-			string guid = string.Empty;
 			int indexInSettings = -1;
 
 			if (sceneAssetProperty.objectReferenceValue) {
 				long localId;
-				if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sceneAssetProperty.objectReferenceValue, out guid, out localId)) {
+				if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sceneAssetProperty.objectReferenceValue, out string guid, out localId)) {
 					indexInSettings = Array.FindIndex(EditorBuildSettings.scenes, s => s.guid.ToString() == guid);
 				}
 			} else if (hadReference) {
-				property.FindPropertyRelative("m_ScenePath").stringValue = string.Empty;
+				property.FindPropertyRelative("scenePath").stringValue = string.Empty;
 			}
 
 			GUIContent settingsContent = indexInSettings != -1
@@ -300,14 +298,14 @@ namespace LRS.SceneManagement
 
 			if (GUI.Button(buildSettingsPos, settingsContent, EditorStyles.miniButtonRight) && sceneAssetProperty.objectReferenceValue) {
 				if (indexInSettings != -1) {
-					var scenes = EditorBuildSettings.scenes.ToList();
+					List<EditorBuildSettingsScene> scenes = EditorBuildSettings.scenes.ToList();
 					scenes.RemoveAt(indexInSettings);
 
 					EditorBuildSettings.scenes = scenes.ToArray();
 
 				} else {
-					var newScenes = new EditorBuildSettingsScene[] {
-						new EditorBuildSettingsScene(AssetDatabase.GetAssetPath(sceneAssetProperty.objectReferenceValue), true)
+					EditorBuildSettingsScene[] newScenes = {
+						new (AssetDatabase.GetAssetPath(sceneAssetProperty.objectReferenceValue), true)
 					};
 
 					EditorBuildSettings.scenes = EditorBuildSettings.scenes.Concat(newScenes).ToArray();

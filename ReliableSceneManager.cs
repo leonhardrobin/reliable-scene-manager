@@ -148,28 +148,28 @@ namespace LRS.SceneManagement
         
         public static void UnloadScene(SceneReference scene)
         {
-            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene.ScenePath);
+            SceneManager.UnloadSceneAsync(scene.ScenePath);
             if (CurrentScene == scene)
             {
-                asyncOperation.completed += _ => CurrentScene = null;
+                CurrentScene = null;
             }
         }
         
         public static void UnloadScene(string sceneName)
         {
-            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(sceneName);
+            SceneManager.UnloadSceneAsync(sceneName);
             if (CurrentScene == SceneReferenceFrom(sceneName))
             {
-                asyncOperation.completed += _ => CurrentScene = null;
+                CurrentScene = null;
             }
         }
         
         public static void UnloadScene(int sceneBuildIndex)
         {
-            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(sceneBuildIndex);
+            SceneManager.UnloadSceneAsync(sceneBuildIndex);
             if (CurrentScene == SceneReferenceFrom(sceneBuildIndex))
             {
-                asyncOperation.completed += _ => CurrentScene = null;
+                CurrentScene = null;
             }
         }
         
@@ -178,7 +178,7 @@ namespace LRS.SceneManagement
             AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene.ScenePath);
             if (CurrentScene == scene)
             {
-                asyncOperation.completed += _ => CurrentScene = null;
+                CurrentScene = null;
             }
             return asyncOperation;
         }

@@ -122,27 +122,6 @@ namespace LRS.SceneManagement
 		{
 			return !(a == b);
 		}
-		
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(this, obj))
-				return true;
-
-			if (ReferenceEquals(null, obj))
-				return false;
-
-			return obj.GetType() == GetType() && Equals((SceneReference)obj);
-		}
-
-		protected bool Equals(SceneReference other)
-		{
-			return Equals(sceneAsset, other.sceneAsset) && isDirty == other.isDirty && scenePath == other.scenePath;
-		}
-
-		public override int GetHashCode()
-		{
-			return HashCode.Combine(sceneAsset, isDirty, scenePath);
-		}
 
 		public bool IsValid()
 		{

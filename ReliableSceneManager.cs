@@ -20,7 +20,10 @@ namespace LRS.SceneManagement
         public static event Action<SceneReference> SceneLoaded;
         public static event Action<SceneReference> SceneUnloaded;
         public static event Action<SceneReference, SceneReference> ActiveSceneChanged;
-        public static event Action<SceneReference> CurrentSceneChanged;
+        /// <summary>
+        /// To get the current scene, use the <see cref="CurrentScene"/> property instead.
+        /// </summary>
+        public static event Action CurrentSceneChanged;
         
         /// <summary>
         /// This is the current scene that is loaded.
@@ -49,7 +52,7 @@ namespace LRS.SceneManagement
             Log($"Active Scene Changed: {previousScene.name} -> {newScene.name}");
             CurrentScene = SceneReferenceFrom(newScene);
             ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
-            CurrentSceneChanged?.Invoke(CurrentScene);
+            CurrentSceneChanged?.Invoke();
         }
         
         #endregion

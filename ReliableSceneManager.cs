@@ -12,14 +12,15 @@ namespace LRS.SceneManagement
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
             SceneManager.activeSceneChanged += OnActiveSceneChanged;
-            DebugLog("Reliable Scene Manager Initialized");
+            Log("Reliable Scene Manager Initialized");
         }
 
-        public static bool debugMode = false;
+        public static bool DebugMode = false;
         
         public static event Action<SceneReference> SceneLoaded;
         public static event Action<SceneReference> SceneUnloaded;
         public static event Action<SceneReference, SceneReference> ActiveSceneChanged;
+        public static event Action<SceneReference> CurrentSceneChanged;
         
         /// <summary>
         /// This is the current scene that is loaded.
@@ -27,27 +28,28 @@ namespace LRS.SceneManagement
         /// </summary>
         public static SceneReference CurrentScene { get; private set; }
         
-        private static List<SceneReference> _sceneQueue = new();
+        private static readonly List<SceneReference> SceneQueue = new();
         
         #region Scene Events
         
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            DebugLog($"Scene Loaded: {scene.name}");
+            Log($"Scene Loaded: {scene.name}");
             SceneLoaded?.Invoke(SceneReferenceFrom(scene));
         }
         
         private static void OnSceneUnloaded(Scene scene)
         {
-            DebugLog($"Scene Unloaded: {scene.name}");
+            Log($"Scene Unloaded: {scene.name}");
             SceneUnloaded?.Invoke(SceneReferenceFrom(scene));
         }
         
         private static void OnActiveSceneChanged(Scene previousScene, Scene newScene)
         {
-            DebugLog($"Active Scene Changed: {previousScene.name} -> {newScene.name}");
+            Log($"Active Scene Changed: {previousScene.name} -> {newScene.name}");
             CurrentScene = SceneReferenceFrom(newScene);
             ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
+            CurrentSceneChanged?.Invoke(CurrentScene);
         }
         
         #endregion
@@ -57,17 +59,6 @@ namespace LRS.SceneManagement
         public static void LoadScene(SceneReference scene, LoadSceneMode mode = LoadSceneMode.Single)
         {
             SceneManager.LoadScene(scene.ScenePath, mode);
-            
-            // switch (mode)
-            // {
-            //     case LoadSceneMode.Single:
-            //         CurrentScene = scene;
-            //         break;
-            //     case LoadSceneMode.Additive:
-            //         break;
-            //     default:
-            //         throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
-            // }
         }
         
         public static void LoadScene(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
@@ -89,16 +80,6 @@ namespace LRS.SceneManagement
         public static void LoadScene(string sceneName, LoadSceneParameters parameters)
         {
             SceneManager.LoadScene(sceneName, parameters);
-            // switch (parameters.loadSceneMode)
-            // {
-            //     case LoadSceneMode.Single:
-            //         CurrentScene = SceneReferenceFrom(sceneName);
-            //         break;
-            //     case LoadSceneMode.Additive:
-            //         break;
-            //     default:
-            //         throw new ArgumentOutOfRangeException(nameof(parameters.loadSceneMode), parameters.loadSceneMode, null);
-            // }
         }
         
         public static void LoadScene(int sceneBuildIndex, LoadSceneParameters parameters)
@@ -242,7 +223,7 @@ namespace LRS.SceneManagement
             return SceneManager.GetSceneByBuildIndex(sceneBuildIndex).IsValid();
         }
 
-        public static bool IsSceneActive(SceneReference scene)
+        public static bool IsSceneLoadedInHierarchy(SceneReference scene)
         {
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -261,17 +242,17 @@ namespace LRS.SceneManagement
         
         public static void AddSceneToQueue(SceneReference scene)
         {
-            _sceneQueue.Add(scene);
+            SceneQueue.Add(scene);
         }
         
         public static void RemoveSceneFromQueue(SceneReference scene)
         {
-            _sceneQueue.Remove(scene);
+            SceneQueue.Remove(scene);
         }
         
         public static void ClearSceneQueue()
         {
-            _sceneQueue.Clear();
+            SceneQueue.Clear();
         }
         
         /// <summary>
@@ -279,17 +260,17 @@ namespace LRS.SceneManagement
         /// </summary>
         public static void LoadNextSceneInQueue()
         {
-            if (_sceneQueue.Count <= 0)
+            if (SceneQueue.Count <= 0)
             {
                 Debug.LogWarning("No scenes in queue");
                 return;
             }
             
-            // if current scene is not in queue, index of will return -1 -> loading first scene in queue
-            int index = _sceneQueue.IndexOf(CurrentScene) + 1;
-            if (index < _sceneQueue.Count)
+            // if current scene is not in queue, IndexOf will return -1 -> loading first scene in queue
+            int index = SceneQueue.IndexOf(CurrentScene) + 1;
+            if (index < SceneQueue.Count)
             {
-                LoadScene(_sceneQueue[index]);
+                LoadScene(SceneQueue[index]);
             }
         }
         
@@ -297,21 +278,21 @@ namespace LRS.SceneManagement
         /// Loads the next scene in the queue. If the current scene is not in the queue, it will load the first scene in the queue.
         /// Also sets the loaded scene as the active scene.
         /// </summary>
-        /// <returns>The AsyncOperation loading the scene</returns>
+        /// <returns>The AsyncOperation loading the scene or null if there is no next scene</returns>
         public static AsyncOperation LoadNextSceneInQueueAsync()
         {
-            if (_sceneQueue.Count <= 0)
+            if (SceneQueue.Count <= 0)
             {
                 Debug.LogWarning("No scenes in queue");
                 return null;
             }
             
-            // if current scene is not in queue, index of will return -1 -> loading first scene in queue
-            int index = _sceneQueue.IndexOf(CurrentScene) + 1;
+            // if current scene is not in queue, IndexOf will return -1 -> loading first scene in queue
+            int index = SceneQueue.IndexOf(CurrentScene) + 1;
             
-            if (index >= _sceneQueue.Count) return null;
+            if (index >= SceneQueue.Count) return null;
             
-            SceneReference scene = _sceneQueue[index];
+            SceneReference scene = SceneQueue[index];
             AsyncOperation operation = LoadSceneAsync(scene);
             operation.completed += _ =>
             {
@@ -322,9 +303,9 @@ namespace LRS.SceneManagement
         
         #endregion
         
-        private static void DebugLog(string message)
+        private static void Log(string message)
         {
-            if (debugMode)
+            if (DebugMode)
             {
                 Debug.Log(message);
             }

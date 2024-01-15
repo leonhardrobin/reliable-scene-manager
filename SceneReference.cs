@@ -13,24 +13,28 @@ using UnityEditor.SceneManagement;
 namespace LRS.SceneManagement
 {
 	/// <summary>
-	/// This is based on https://github.com/NibbleByte/UnitySceneReference/blob/master/Assets/DevLocker/Utils/SceneReference.cs
-	/// 
-	/// Summary from NibbleByte/unity-scene-reference:
-	/// 
-	/// Keeps reference to a scene asset and tracks it's path, so it can be used in the game runtime.
-	///
-	/// It's a well known fact that scenes can't be referenced like prefabs etc.
-	/// The <see cref="UnityEngine.SceneManagement.SceneManager"/> API works with relative scene paths or names.
-	/// Use this class to avoid manually typing and updating scene path strings - it will try to do it for you as best as it can,
-	/// including when <b>building the player</b>.
-	///
-	/// Using <see cref="ISerializationCallbackReceiver" /> was inspired by the <see cref="https://github.com/JohannesMP/unity-scene-reference">unity-scene-reference</see> implementation.
+	/// This is based on <a href="https://github.com/NibbleByte/UnitySceneReference/blob/master/Assets/DevLocker/Utils/SceneReference.cs">NibbleByte/SceneReference</a><br/>
+	/// <br/>
+	/// Summary from NibbleByte/unity-scene-reference:<br/>
+	/// Keeps reference to a scene asset and tracks it's path, so it can be used in the game runtime.<br/>
+	/// <br/>
+	/// Using <see cref="ISerializationCallbackReceiver" /> was inspired by the <a href="https://github.com/JohannesMP/unity-scene-reference">unity-scene-reference</a> implementation.<br/>
+	/// This version is modified to work with the Reliable Scene Manager by <a href="https://github.com/leonhardrobin">Leonhard Robin Schnaitl</a>.<br/>
+	/// <br/>
+	/// Added features:<br/>
+	/// <list type="bullet">
+	///	<item>Added IEquatable(Scene) to check if a scene is equal to the scene reference</item>
+	///	<item>Added IEquatable(SceneReference) for things like list.Contains(sceneReference)</item>
+	///	<item>Implemented == and != operators</item>
+	///	<item>Added IsValid() to check if the scene is valid</item>
+	/// <item>Added IsLoaded() to check if the scene is loaded</item>
+	/// </list>
 	/// </summary>
 #if UNITY_EDITOR
 	[InitializeOnLoad]
 #endif
 	[Serializable]
-	public class SceneReference : ISerializationCallbackReceiver
+	public class SceneReference : ISerializationCallbackReceiver, IEquatable<SceneReference>, IEquatable<Scene>
 	{
 		public SceneReference() { }
 
@@ -123,11 +127,45 @@ namespace LRS.SceneManagement
 			return !(a == b);
 		}
 
+		public override bool Equals(object obj)
+		{
+			if (obj is SceneReference scene)
+			{
+				return scenePath == scene.scenePath;
+			}
+
+			return false;
+		}
+		
+		public bool Equals(SceneReference other)
+		{
+			if (ReferenceEquals(null, other)) return false;
+			if (ReferenceEquals(this, other)) return true;
+			return scenePath == other.scenePath;
+		}
+		
+		public bool Equals(Scene other)
+		{
+			return scenePath == other.path;
+		}
+		
+		public override int GetHashCode()
+		{
+			return scenePath != null ? scenePath.GetHashCode() : 0;
+		}
+
+		/// <summary>
+		///	Hand through from <see cref="Scene.IsValid"/>.
+		/// </summary>
+		/// <returns>Whether this is a valid Scene.</returns>
 		public bool IsValid()
 		{
 			return !string.IsNullOrEmpty(scenePath) && SceneManager.GetSceneByPath(scenePath).IsValid();
 		}
 		
+		/// <summary>
+		/// Hand through from <see cref="Scene.isLoaded"/>.
+		/// </summary>
 		public bool IsLoaded()
 		{
 			return !string.IsNullOrEmpty(scenePath) && SceneManager.GetSceneByPath(scenePath).isLoaded;
@@ -147,7 +185,7 @@ namespace LRS.SceneManagement
 		}
 #endif
 
-		public SceneReference Clone() => new SceneReference(this);
+		public SceneReference Clone() => new(this);
 
 		public override string ToString()
 		{
@@ -259,8 +297,7 @@ namespace LRS.SceneManagement
 			int indexInSettings = -1;
 
 			if (sceneAssetProperty.objectReferenceValue) {
-				long localId;
-				if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sceneAssetProperty.objectReferenceValue, out string guid, out localId)) {
+				if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sceneAssetProperty.objectReferenceValue, out string guid, out long _)) {
 					indexInSettings = Array.FindIndex(EditorBuildSettings.scenes, s => s.guid.ToString() == guid);
 				}
 			} else if (hadReference) {

@@ -1,0 +1,16 @@
+{
+    "name": "SceneManagement.Editor",
+    "rootNamespace": "LRS",
+    "references": ["GUID:84f72cbab6b22a7458a4ac7e0bfc69ce"],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

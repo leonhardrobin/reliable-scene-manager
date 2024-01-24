@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,17 +10,13 @@ namespace LRS.SceneManagement
     {
         static ReliableSceneManager()
         {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            SceneManager.sceneUnloaded += OnSceneUnloaded;
-            SceneManager.activeSceneChanged += OnActiveSceneChanged;
-            Log("Reliable Scene Manager Initialized");
+            SceneManager.sceneLoaded += OnSceneLoadedHandler;
+            SceneManager.sceneUnloaded += OnSceneUnloadedHandler;
+            SceneManager.activeSceneChanged += OnActiveSceneChangedHandler;
         }
 
         public static bool DebugMode = false;
         
-        public static event Action<SceneReference> SceneLoaded;
-        public static event Action<SceneReference> SceneUnloaded;
-        public static event Action<SceneReference, SceneReference> ActiveSceneChanged;
         /// <summary>
         /// To get the current scene, use the <see cref="CurrentScene"/> property instead.
         /// </summary>
@@ -33,35 +30,75 @@ namespace LRS.SceneManagement
         
         private static readonly List<SceneReference> SceneQueue = new();
         
-        #region Scene Events
+        #region Wrapper Properties and Fields for SceneManager
         
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        public static event Action<SceneReference> SceneLoaded;
+        public static event Action<SceneReference> SceneUnloaded;
+        public static event Action<SceneReference, SceneReference> ActiveSceneChanged;
+        public static int LoadedSceneCount => SceneManager.loadedSceneCount;
+        public static int SceneCount => SceneManager.sceneCount;
+        public static int SceneCountInBuildSettings => SceneManager.sceneCountInBuildSettings;
+        
+        #endregion
+        
+        #region Wrapper Methods for SceneManager
+        
+        #region Create Scene
+        
+        public static SceneReference CreateScene(string sceneName)
         {
-            Log($"Scene Loaded: {scene.name}");
-            SceneLoaded?.Invoke(SceneReferenceFrom(scene));
+            Scene scene = SceneManager.CreateScene(sceneName);
+            return SceneReferenceFrom(scene);
         }
         
-        private static void OnSceneUnloaded(Scene scene)
+        public static SceneReference CreateScene(string sceneName, CreateSceneParameters parameters)
         {
-            Log($"Scene Unloaded: {scene.name}");
-            SceneUnloaded?.Invoke(SceneReferenceFrom(scene));
-        }
-        
-        private static void OnActiveSceneChanged(Scene previousScene, Scene newScene)
-        {
-            Log($"Active Scene Changed: {previousScene.name} -> {newScene.name}");
-            CurrentScene = SceneReferenceFrom(newScene);
-            ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
-            CurrentSceneChanged?.Invoke();
+            Scene scene = SceneManager.CreateScene(sceneName, parameters);
+            return SceneReferenceFrom(scene);
         }
         
         #endregion
         
-        #region Basic Scene Loading
+        #region Get Scene
+        
+        public static SceneReference GetActiveScene()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            return SceneReferenceFrom(scene);
+        }
+        
+        
+        public static SceneReference GetSceneAt(int index)
+        {
+            Scene scene = SceneManager.GetSceneAt(index);
+            return SceneReferenceFrom(scene);
+        }
+        
+        public static SceneReference GetSceneByBuildIndex(int buildIndex)
+        {
+            Scene scene = SceneManager.GetSceneByBuildIndex(buildIndex);
+            return SceneReferenceFrom(scene);
+        }
+        
+        public static SceneReference GetSceneByName(string name)
+        {
+            Scene scene = SceneManager.GetSceneByName(name);
+            return SceneReferenceFrom(scene);
+        }
+        
+        public static SceneReference GetSceneByPath(string scenePath)
+        {
+            Scene scene = SceneManager.GetSceneByPath(scenePath);
+            return SceneReferenceFrom(scene);
+        }
+        
+        #endregion
+        
+        #region Load Scene
         
         public static void LoadScene(SceneReference scene, LoadSceneMode mode = LoadSceneMode.Single)
         {
-            SceneManager.LoadScene(scene.ScenePath, mode);
+            SceneManager.LoadScene(scene.Path, mode);
         }
         
         public static void LoadScene(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
@@ -76,7 +113,7 @@ namespace LRS.SceneManagement
         
         public static void LoadScene(SceneReference scene, LoadSceneParameters parameters)
         {
-            SceneManager.LoadScene(scene.ScenePath, parameters);
+            SceneManager.LoadScene(scene.Path, parameters);
             CurrentScene = scene;
         }
         
@@ -92,7 +129,7 @@ namespace LRS.SceneManagement
         
         public static AsyncOperation LoadSceneAsync(SceneReference scene, LoadSceneMode mode = LoadSceneMode.Single)
         {
-            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(scene.ScenePath, mode);
+            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(scene.Path, mode);
             return asyncOperation;
         }
         
@@ -110,7 +147,7 @@ namespace LRS.SceneManagement
         
         public static AsyncOperation LoadSceneAsync(SceneReference scene, LoadSceneParameters parameters)
         {
-            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(scene.ScenePath, parameters);
+            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(scene.Path, parameters);
             return asyncOperation;
         }
         
@@ -128,11 +165,11 @@ namespace LRS.SceneManagement
         
         #endregion
         
-        #region Basic Scene Unloading
+        #region Unload Scene
         
         public static void UnloadScene(SceneReference scene)
         {
-            SceneManager.UnloadSceneAsync(scene.ScenePath);
+            SceneManager.UnloadSceneAsync(scene.Path);
         }
         
         public static void UnloadScene(string sceneName)
@@ -147,7 +184,7 @@ namespace LRS.SceneManagement
         
         public static AsyncOperation UnloadSceneAsync(SceneReference scene)
         {
-            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene.ScenePath);
+            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene.Path);
             return asyncOperation;
         }
         
@@ -163,18 +200,54 @@ namespace LRS.SceneManagement
             return asyncOperation;
         }
         
-        public static bool SetActiveAndCurrentScene(SceneReference scene)
+        #endregion
+        
+        #region Merge Scenes and Move GameObjects
+        
+        public static void MergeScenes(SceneReference sourceScene, SceneReference destinationScene)
         {
-            bool value = false;
-            if (scene.IsValid())
-            {
-                value = SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.ScenePath));
-            }
-            return value;
+            SceneManager.MergeScenes(sourceScene.Scene, destinationScene.Scene);
+        }
+        
+        public static void MoveGameObjectToScene(GameObject go, SceneReference scene)
+        {
+            SceneManager.MoveGameObjectToScene(go, scene.Scene);
         }
         
         #endregion
         
+        #region Set Active Scene
+        
+        public static bool SetActiveScene(SceneReference scene)
+        {
+            return SceneManager.SetActiveScene(scene.Scene);
+        }
+        
+        #endregion
+        
+        #endregion
+        
+        #region Scene Event Handlers
+        
+        private static void OnSceneLoadedHandler(Scene scene, LoadSceneMode mode)
+        {
+            SceneLoaded?.Invoke(SceneReferenceFrom(scene));
+        }
+        
+        private static void OnSceneUnloadedHandler(Scene scene)
+        {
+            SceneUnloaded?.Invoke(SceneReferenceFrom(scene));
+        }
+
+        private static void OnActiveSceneChangedHandler(Scene previousScene, Scene newScene)
+        {
+            CurrentScene = SceneReferenceFrom(newScene);
+            ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
+            CurrentSceneChanged?.Invoke();
+        }
+
+        #endregion
+
         #region Create Scene Reference
         
         public static SceneReference SceneReferenceFrom(Scene scene)
@@ -196,49 +269,20 @@ namespace LRS.SceneManagement
         
         #region Check Scene
         
-        public static bool IsSceneLoaded(SceneReference scene)
-        {
-            return scene.IsLoaded();
-        }
-        
-        public static bool IsSceneLoaded(string sceneName)
-        {
-            return SceneManager.GetSceneByName(sceneName).isLoaded;
-        }
-        
-        public static bool IsSceneLoaded(int sceneBuildIndex)
-        {
-            return SceneManager.GetSceneByBuildIndex(sceneBuildIndex).isLoaded;
-        }
-        
-        public static bool IsSceneValid(SceneReference scene)
-        {
-            return scene.IsValid();
-        }
-        
-        public static bool IsSceneValid(string sceneName)
-        {
-            return SceneManager.GetSceneByName(sceneName).IsValid();
-        }
-        
-        public static bool IsSceneValid(int sceneBuildIndex)
-        {
-            return SceneManager.GetSceneByBuildIndex(sceneBuildIndex).IsValid();
-        }
+        public static bool IsSceneLoaded(SceneReference scene) => scene.IsLoaded();
 
-        public static bool IsSceneLoadedInHierarchy(SceneReference scene)
-        {
-            for (int i = 0; i < SceneManager.sceneCount; i++)
-            {
-                Scene loadedScene = SceneManager.GetSceneAt(i);
-                if (loadedScene.path == scene.ScenePath)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
+        public static bool IsSceneLoaded(string sceneName) => SceneManager.GetSceneByName(sceneName).isLoaded;
+
+        public static bool IsSceneLoaded(int sceneBuildIndex) => SceneManager.GetSceneByBuildIndex(sceneBuildIndex).isLoaded;
+
+        public static bool IsSceneValid(SceneReference scene) => scene.IsValid();
+
+        public static bool IsSceneValid(string sceneName) => SceneManager.GetSceneByName(sceneName).IsValid();
+
+        public static bool IsSceneValid(int sceneBuildIndex) => SceneManager.GetSceneByBuildIndex(sceneBuildIndex).IsValid();
+
+        public static bool IsSceneLoadedInHierarchy(SceneReference scene) => GetLoadedScenes().Contains(scene);
+
         #endregion
         
         #region Scene List
@@ -299,9 +343,39 @@ namespace LRS.SceneManagement
             AsyncOperation operation = LoadSceneAsync(scene);
             operation.completed += _ =>
             {
-                SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.ScenePath));
+                SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.Path));
             };
             return operation;
+        }
+        
+        #endregion
+        
+        #region Get Scene(s)
+
+        public static List<SceneReference> GetLoadedScenes()
+        {
+            int sceneCount = SceneManager.loadedSceneCount;
+            List<SceneReference> scenes = new (sceneCount);
+            for (int i = 0; i < sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                scenes.Add(SceneReferenceFrom(scene));
+            }
+            return scenes;
+        }
+        
+        #endregion
+        
+        #region Set Scene
+        
+        public static bool SetActiveAndCurrentScene(SceneReference scene)
+        {
+            bool value = false;
+            if (scene.IsValid())
+            {
+                value = SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.Path));
+            }
+            return value;
         }
         
         #endregion

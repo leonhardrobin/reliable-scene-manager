@@ -25,6 +25,8 @@ namespace LRS.SceneManagement
 	///	<item>Implemented == and != operators</item>
 	///	<item>Added IsValid() to check if the scene is valid</item>
 	/// <item>Added IsLoaded() to check if the scene is loaded</item>
+	/// <item>Wrapper Properties for all Scene properties</item>
+	/// <item>Access to the Scene struct object</item>
 	/// </list>
 	/// </summary>
 	#if UNITY_EDITOR

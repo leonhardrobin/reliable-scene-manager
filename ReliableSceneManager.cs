@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -29,7 +30,7 @@ namespace LRS.SceneManagement
         /// </summary>
         public static SceneReference CurrentScene { get; private set; }
         
-        public static int IndexInSceneList { get; private set; }
+        public static int IndexInSceneList { get; set; }
 
         #region Wrapper Properties and Fields for SceneManager
         

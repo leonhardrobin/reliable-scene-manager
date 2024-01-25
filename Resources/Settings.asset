@@ -10,6 +10,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d7cc77f6d84486db36ece566ee059f2, type: 3}
-  m_Name: ReliableSceneManagerSettings
+  m_Name: Settings
   m_EditorClassIdentifier: 
-  debugMode: 0

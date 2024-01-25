@@ -41,13 +41,20 @@ namespace LRS.SceneManagement.Editor
                 {
                     SceneAsset oldScene = _sceneList[index] == null ? null : AssetDatabase.LoadAssetAtPath<SceneAsset>(_sceneList[index].Path);
                     
-                    if (_sceneList[ReliableSceneManager.IndexInSceneList] == _sceneList[index])
+                    bool isCurrentScene = _sceneList[index] == ReliableSceneManager.CurrentScene && ReliableSceneManager.CurrentScene != null;
+                    bool isIndexInSceneList = _sceneList[index] == _sceneList[ReliableSceneManager.IndexInSceneList] && _sceneList[ReliableSceneManager.IndexInSceneList] != null;
+                    
+                    if (isCurrentScene)
                     {
                         GUI.backgroundColor = Color.green;
                     }
-                    else if (ReliableSceneManager.CurrentScene == _sceneList[index])
+                    if (isIndexInSceneList)
                     {
                         GUI.backgroundColor = Color.yellow;
+                    }
+                    if (isCurrentScene && isIndexInSceneList)
+                    {
+                        GUI.backgroundColor = Color.green + Color.yellow;
                     }
                     SceneAsset newScene = EditorGUI.ObjectField(rect, oldScene, typeof(SceneAsset), false) as SceneAsset;
                     GUI.backgroundColor = Color.white;

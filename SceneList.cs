@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace LRS.SceneManagement
@@ -19,6 +20,7 @@ namespace LRS.SceneManagement
                     {
                         _instance = CreateInstance<SceneList>();
                         _instance._scenes = new List<SceneReference>();
+                        AssetDatabase.CreateAsset(_instance, "Assets/reliable-scene-manager/Resources/SceneList.asset");
                     }
                 }
                 return _instance;

@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace LRS.SceneManagement
 {
@@ -13,8 +17,6 @@ namespace LRS.SceneManagement
             SceneManager.sceneUnloaded += OnSceneUnloadedHandler;
             SceneManager.activeSceneChanged += OnActiveSceneChangedHandler;
         }
-
-        public static bool DebugMode = false;
         
         /// <summary>
         /// To get the current scene, use the <see cref="CurrentScene"/> property instead.
@@ -27,8 +29,8 @@ namespace LRS.SceneManagement
         /// </summary>
         public static SceneReference CurrentScene { get; private set; }
         
-        private static readonly List<SceneReference> SceneQueue = new();
-        
+        public static int IndexInSceneList { get; private set; }
+
         #region Wrapper Properties and Fields for SceneManager
         
         public static event Action<SceneReference> SceneLoaded;
@@ -243,6 +245,8 @@ namespace LRS.SceneManagement
             CurrentScene = SceneReferenceFrom(newScene);
             ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
             CurrentSceneChanged?.Invoke();
+            
+            Log($"Active scene changed from {newScene.name} to {CurrentScene.Name}");
         }
 
         #endregion
@@ -262,6 +266,11 @@ namespace LRS.SceneManagement
         public static SceneReference SceneReferenceFrom(int sceneBuildIndex)
         {
             return new SceneReference(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).path);
+        }
+        
+        public static SceneReference SceneReferenceFromPath(string scenePath)
+        {
+            return new SceneReference(scenePath);
         }
         
         #endregion
@@ -288,62 +297,75 @@ namespace LRS.SceneManagement
         
         public static void AddSceneToQueue(SceneReference scene)
         {
-            SceneQueue.Add(scene);
+            SceneList.Add(scene);
         }
         
         public static void RemoveSceneFromQueue(SceneReference scene)
         {
-            SceneQueue.Remove(scene);
+            SceneList.Remove(scene);
         }
         
         public static void ClearSceneQueue()
         {
-            SceneQueue.Clear();
+            SceneList.Clear();
         }
-        
+
         /// <summary>
-        /// Loads the next scene in the queue. If the current scene is not in the queue, it will load the first scene in the queue.  
+        /// Loads the next scene in the queue. 
         /// </summary>
-        public static void LoadNextSceneInQueue()
+        public static void LoadNextSceneInList()
         {
-            if (SceneQueue.Count <= 0)
+            
+            if (SceneList.Count <= 0)
             {
-                Debug.LogWarning("No scenes in queue");
+                LogWarning("No scenes in queue");
                 return;
             }
             
-            // if current scene is not in queue, IndexOf will return -1 -> loading first scene in queue
-            int index = SceneQueue.IndexOf(CurrentScene) + 1;
-            if (index < SceneQueue.Count)
+            if (IndexInSceneList >= SceneList.Count)
             {
-                LoadScene(SceneQueue[index]);
+                LogWarning("No more scenes in queue");
+                return;
+            }
+
+            LoadScene(SceneList.Scenes[IndexInSceneList]);
+            
+            if (IndexInSceneList < SceneList.Count - 1)
+            {
+                IndexInSceneList++;
             }
         }
         
         /// <summary>
-        /// Loads the next scene in the queue. If the current scene is not in the queue, it will load the first scene in the queue.
-        /// Also sets the loaded scene as the active scene.
+        /// Loads the next scene in the queue.
         /// </summary>
         /// <returns>The AsyncOperation loading the scene or null if there is no next scene</returns>
-        public static AsyncOperation LoadNextSceneInQueueAsync()
+        public static AsyncOperation LoadNextSceneInListAsync()
         {
-            if (SceneQueue.Count <= 0)
+            if (SceneList.Count <= 0)
             {
-                Debug.LogWarning("No scenes in queue");
+                LogWarning("No scenes in queue");
                 return null;
             }
             
-            // if current scene is not in queue, IndexOf will return -1 -> loading first scene in queue
-            int index = SceneQueue.IndexOf(CurrentScene) + 1;
-            
-            if (index >= SceneQueue.Count) return null;
-            
-            SceneReference scene = SceneQueue[index];
+            if (IndexInSceneList >= SceneList.Count)
+            {
+                LogWarning("No more scenes in queue");
+                return null;
+            }
+
+            SceneReference scene = SceneList.Scenes[IndexInSceneList];
             AsyncOperation operation = LoadSceneAsync(scene);
             operation.completed += _ =>
             {
                 SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.Path));
             };
+            
+            if (IndexInSceneList < SceneList.Count - 1)
+            {
+                IndexInSceneList++;
+            }
+            
             return operation;
         }
         
@@ -379,12 +401,77 @@ namespace LRS.SceneManagement
         
         #endregion
         
+        #region Build Settings
+        
+        public static int AddSceneToBuildSettings(SceneReference scene)
+        {
+            if (scene == null)
+            {
+                LogError("Scene is null");
+                return -1;
+            }
+            
+            if (scene.BuildIndex >= 0)
+            {
+                return scene.BuildIndex;
+            }
+            
+            EditorBuildSettingsScene[] newScenes = {
+                new (scene.Path, true)
+            };
+
+            if (EditorBuildSettings.scenes.ToList().Any(s => s.path == scene.Path))
+            {
+                return scene.BuildIndex;
+            }
+
+            EditorBuildSettings.scenes = EditorBuildSettings.scenes.Concat(newScenes).ToArray();
+            
+            return scene.BuildIndex;
+        }
+        
+        #endregion
+        
+        #region Logging
+        
         private static void Log(string message)
         {
-            if (DebugMode)
+            if (Settings.DebugMode)
             {
-                Debug.Log(message);
+                Debug.Log(CreateLogMessage(message));
             }
         }
+        
+        private static void LogWarning(string message)
+        {
+            if (Settings.DebugMode)
+            {
+                Debug.LogWarning(CreateLogMessage(message, "yellow"));
+            }
+        }
+        
+        private static void LogError(string message)
+        {
+            if (Settings.DebugMode)
+            {
+                Debug.LogError(CreateLogMessage(message, "red"));
+            }
+        }
+        
+        private static string CreateLogMessage(string message, string color = "white")
+        {
+            StringBuilder builder = new ();
+            builder.Append("<b><color=");
+            builder.Append(color);
+            builder.Append(">Reliable Scene Manager:</color></b>\n");
+            builder.Append("<color=");
+            builder.Append(color);
+            builder.Append(">");
+            builder.Append(message);
+            builder.Append("</color>");
+            return builder.ToString();
+        }
+        
+        #endregion
     }
 }

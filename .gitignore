@@ -78,6 +78,3 @@ crashlytics-build.properties
 
 # Crash files and such
 mono_crash.*.*.json
-
-#because this is a package we will exclude meta files
-*.meta

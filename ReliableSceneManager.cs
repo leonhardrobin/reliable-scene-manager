@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 
 namespace LRS.SceneManagement
 {
@@ -30,7 +28,7 @@ namespace LRS.SceneManagement
         /// </summary>
         public static SceneReference CurrentScene { get; private set; }
         
-        public static int IndexInSceneList { get; set; }
+        internal static int IndexInSceneList { get; set; }
 
         #region Wrapper Properties and Fields for SceneManager
         
@@ -404,7 +402,7 @@ namespace LRS.SceneManagement
         
         #region Build Settings
         
-        public static int AddSceneToBuildSettings(SceneReference scene)
+        internal static int AddSceneToBuildSettings(SceneReference scene)
         {
             if (scene == null)
             {
@@ -435,7 +433,7 @@ namespace LRS.SceneManagement
         
         #region Logging
         
-        private static void Log(string message)
+        internal static void Log(string message)
         {
             if (Settings.DebugMode)
             {
@@ -443,7 +441,7 @@ namespace LRS.SceneManagement
             }
         }
         
-        private static void LogWarning(string message)
+        internal static void LogWarning(string message)
         {
             if (Settings.DebugMode)
             {
@@ -451,7 +449,7 @@ namespace LRS.SceneManagement
             }
         }
         
-        private static void LogError(string message)
+        internal static void LogError(string message)
         {
             if (Settings.DebugMode)
             {

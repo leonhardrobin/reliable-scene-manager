@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace LRS.SceneManagement
 {
-    public class SceneList : ScriptableObject
+    internal sealed class SceneList : ScriptableObject
     {
         private static SceneList _instance;
         private List<SceneReference> _scenes = new();

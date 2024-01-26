@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace LRS.SceneManagement
 {
-    public class Settings : ScriptableObject
+    internal sealed class Settings : ScriptableObject
     {
         private static Settings _instance;
 

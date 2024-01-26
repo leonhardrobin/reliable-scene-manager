@@ -401,7 +401,7 @@ namespace LRS.SceneManagement
         #endregion
         
         #region Build Settings
-        
+        #if UNITY_EDITOR
         internal static int AddSceneToBuildSettings(SceneReference scene)
         {
             if (scene == null)
@@ -428,7 +428,7 @@ namespace LRS.SceneManagement
             
             return scene.BuildIndex;
         }
-        
+        #endif
         #endregion
         
         #region Logging

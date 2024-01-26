@@ -16,12 +16,14 @@ namespace LRS.SceneManagement
                 if (_instance == null)
                 {
                     _instance = Resources.Load<SceneList>("SceneList");
+                    #if UNITY_EDITOR
                     if (_instance == null)
                     {
                         _instance = CreateInstance<SceneList>();
                         _instance._scenes = new List<SceneReference>();
                         AssetDatabase.CreateAsset(_instance, "Assets/reliable-scene-manager/Resources/SceneList.asset");
                     }
+                    #endif
                 }
                 return _instance;
             }

@@ -98,7 +98,7 @@ namespace LRS.SceneManagement
         
         public static void LoadScene(SceneReference scene, LoadSceneMode mode = LoadSceneMode.Single)
         {
-            SceneManager.LoadScene(scene.Path, mode);
+            SceneManager.LoadScene(scene.Name, mode);
         }
         
         public static void LoadScene(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
@@ -147,7 +147,7 @@ namespace LRS.SceneManagement
         
         public static AsyncOperation LoadSceneAsync(SceneReference scene, LoadSceneParameters parameters)
         {
-            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(scene.Path, parameters);
+            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(scene.Name, parameters);
             return asyncOperation;
         }
         
@@ -169,7 +169,7 @@ namespace LRS.SceneManagement
         
         public static void UnloadScene(SceneReference scene)
         {
-            SceneManager.UnloadSceneAsync(scene.Path);
+            SceneManager.UnloadSceneAsync(scene.Name);
         }
         
         public static void UnloadScene(string sceneName)
@@ -184,7 +184,7 @@ namespace LRS.SceneManagement
         
         public static AsyncOperation UnloadSceneAsync(SceneReference scene)
         {
-            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene.Path);
+            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene.Name);
             return asyncOperation;
         }
         

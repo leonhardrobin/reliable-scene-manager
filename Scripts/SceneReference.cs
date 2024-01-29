@@ -20,7 +20,6 @@ namespace LRS.SceneManagement
 	/// <br/>
 	/// Added features:<br/>
 	/// <list type="bullet">
-	///	<item>Added IEquatable(Scene) to check if a scene is equal to the scene reference</item>
 	///	<item>Added IEquatable(SceneReference) for things like list.Contains(sceneReference)</item>
 	///	<item>Implemented == and != operators</item>
 	///	<item>Added IsValid() to check if the scene is valid</item>
@@ -33,7 +32,7 @@ namespace LRS.SceneManagement
 	[InitializeOnLoad]
 	#endif
 	[Serializable]
-	public class SceneReference : ISerializationCallbackReceiver, IEquatable<SceneReference>, IEquatable<Scene>
+	public class SceneReference : ISerializationCallbackReceiver, IEquatable<SceneReference>
 	{
 		#region Contructors
 		public SceneReference() { }
@@ -147,11 +146,6 @@ namespace LRS.SceneManagement
 			if (ReferenceEquals(null, other)) return false;
 			if (ReferenceEquals(this, other)) return true;
 			return scenePath == other.scenePath;
-		}
-		
-		public bool Equals(Scene other)
-		{
-			return scenePath == other.path;
 		}
 		
 		public override int GetHashCode()

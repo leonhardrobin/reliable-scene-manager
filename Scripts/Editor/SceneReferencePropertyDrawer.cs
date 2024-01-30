@@ -14,7 +14,7 @@ namespace LRS.SceneManagement.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             SerializedProperty isDirtyProperty = property.FindPropertyRelative("isDirty");
-            if (isDirtyProperty.boolValue) 
+            if (isDirtyProperty.boolValue)
             {
                 isDirtyProperty.boolValue = false;
                 // This will force change in the property and make it dirty.
@@ -41,14 +41,15 @@ namespace LRS.SceneManagement.Editor
 
             int indexInSettings = -1;
 
-            if (sceneAssetProperty.objectReferenceValue) 
+            if (sceneAssetProperty.objectReferenceValue)
             {
-                if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sceneAssetProperty.objectReferenceValue, out string guid, out long _)) 
+                if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sceneAssetProperty.objectReferenceValue,
+                        out string guid, out long _))
                 {
                     indexInSettings = Array.FindIndex(EditorBuildSettings.scenes, s => s.guid.ToString() == guid);
                 }
-            } 
-            else if (hadReference) 
+            }
+            else if (hadReference)
             {
                 property.FindPropertyRelative("scenePath").stringValue = string.Empty;
             }
@@ -61,21 +62,21 @@ namespace LRS.SceneManagement.Editor
             Color prevBackgroundColor = GUI.backgroundColor;
             GUI.backgroundColor = indexInSettings != -1 ? Color.red : Color.green;
 
-            if (GUI.Button(buildSettingsPos, settingsContent, EditorStyles.miniButtonRight) && sceneAssetProperty.objectReferenceValue) 
+            if (GUI.Button(buildSettingsPos, settingsContent, EditorStyles.miniButtonRight) &&
+                sceneAssetProperty.objectReferenceValue)
             {
-                if (indexInSettings != -1) 
+                if (indexInSettings != -1)
                 {
                     List<EditorBuildSettingsScene> scenes = EditorBuildSettings.scenes.ToList();
                     scenes.RemoveAt(indexInSettings);
 
                     EditorBuildSettings.scenes = scenes.ToArray();
-
-                } 
-                else 
+                }
+                else
                 {
-                    EditorBuildSettingsScene[] newScenes = 
+                    EditorBuildSettingsScene[] newScenes =
                     {
-                        new (AssetDatabase.GetAssetPath(sceneAssetProperty.objectReferenceValue), true)
+                        new(AssetDatabase.GetAssetPath(sceneAssetProperty.objectReferenceValue), true)
                     };
 
                     EditorBuildSettings.scenes = EditorBuildSettings.scenes.Concat(newScenes).ToArray();

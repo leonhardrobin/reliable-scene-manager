@@ -6,9 +6,7 @@ namespace LRS.SceneManagement
     internal sealed class Settings : ScriptableObject
     {
         private static Settings _instance;
-
-        private bool _debugMode;
-
+        
         private static Settings Instance
         {
             get
@@ -16,19 +14,22 @@ namespace LRS.SceneManagement
                 if (_instance == null)
                 {
                     _instance = Resources.Load<Settings>("Settings");
-                    #if UNITY_EDITOR
+#if UNITY_EDITOR
                     if (_instance == null)
                     {
                         _instance = CreateInstance<Settings>();
                         _instance._debugMode = false;
                         AssetDatabase.CreateAsset(_instance, "Assets/reliable-scene-manager/Resources/Settings.asset");
                     }
-                    #endif
+#endif
                 }
+
                 return _instance;
             }
         }
         
+        private bool _debugMode;
+
         public static bool DebugMode
         {
             get => Instance._debugMode;

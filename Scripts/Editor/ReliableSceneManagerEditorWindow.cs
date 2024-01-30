@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
@@ -9,10 +8,13 @@ namespace LRS.SceneManagement.Editor
 {
     public class ReliableSceneManagerEditorWindow : EditorWindow
     {
+        private const int MinWindowWidth = 500;
+        private const int MinWindowHeight = 300;
+        
         #region Tabs 
         
         private int _selectedTab;
-        private readonly string[] _tabs = {"Scene List", "Settings"};
+        private readonly string[] _tabs = {"Persistent Data", "Scene List", "Settings"};
         
         #endregion
         
@@ -21,12 +23,16 @@ namespace LRS.SceneManagement.Editor
         private List<SceneReference> _sceneList = new();
         private ReorderableList _reorderableList;
         
+        private readonly Color _currentSceneColor = Color.green;
+        private readonly Color _indexInSceneListColor = Color.yellow;
+        
         #endregion
         
         [MenuItem("Window/LRS/Reliable Scene Manager")]
         public static void ShowWindow()
         {
-            GetWindow<ReliableSceneManagerEditorWindow>("Reliable Scene Manager");
+            ReliableSceneManagerEditorWindow window = GetWindow<ReliableSceneManagerEditorWindow>("Reliable Scene Manager");
+            window.minSize = new Vector2(MinWindowHeight, MinWindowWidth);
         }
         
         private void OnEnable()
@@ -47,17 +53,13 @@ namespace LRS.SceneManagement.Editor
                         bool isCurrentScene = _sceneList[index] == ReliableSceneManager.CurrentScene && ReliableSceneManager.CurrentScene != null;
                         bool isIndexInSceneList = _sceneList[index] == _sceneList[ReliableSceneManager.IndexInSceneList] && _sceneList[ReliableSceneManager.IndexInSceneList] != null;
                         
-                        if (isCurrentScene)
-                        {
-                            GUI.backgroundColor = Color.green;
-                        }
                         if (isIndexInSceneList)
                         {
-                            GUI.backgroundColor = Color.yellow;
+                            GUI.backgroundColor = _indexInSceneListColor;
                         }
-                        if (isCurrentScene && isIndexInSceneList)
+                        if (isCurrentScene)
                         {
-                            GUI.backgroundColor = Color.green + Color.yellow;
+                            GUI.backgroundColor = _currentSceneColor;
                         }
                     }
                     SceneAsset newScene = EditorGUI.ObjectField(rect, oldScene, typeof(SceneAsset), false) as SceneAsset;
@@ -81,17 +83,21 @@ namespace LRS.SceneManagement.Editor
 
         private void OnGUI()
         {
+            
+            GUILayout.Space(10);
+            
             _selectedTab = GUILayout.Toolbar(_selectedTab, _tabs);
             
             GUILayout.Space(10);
             
-            switch (_selectedTab)
+            switch (_tabs[_selectedTab])
             {
-                case 0:
-                    //SceneListTab();
+                case "Persistent Data":
+                    break;
+                case "Scene List":
                     ReorderableList();
                     break;
-                case 1:
+                case "Settings":
                     SettingsTab();
                     break;
             }
@@ -104,80 +110,9 @@ namespace LRS.SceneManagement.Editor
 
         private static void SettingsTab()
         {
-            GUILayout.Label("Settings", EditorStyles.boldLabel);
-            
-            GUILayout.Space(10);
+            GUILayout.Label("Debugging", EditorStyles.boldLabel);
             
             Settings.DebugMode = EditorGUILayout.Toggle("Debug Mode", Settings.DebugMode);
-        }
-
-        private void SceneListTab()
-        {
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("Scene List", EditorStyles.boldLabel);
-            if (GUILayout.Button("Add Scene"))
-            {
-                _sceneList.Add(null);
-            }
-            EditorGUILayout.EndHorizontal();
-            
-            GUILayout.Space(10);
-            
-            List<SceneAsset> oldScenes = new (_sceneList.Count);
-
-            foreach (SceneReference sceneReference in _sceneList)
-            {
-                SceneAsset oldScene = sceneReference == null ? null : AssetDatabase.LoadAssetAtPath<SceneAsset>(sceneReference.Path);
-                oldScenes.Add(oldScene);
-            }
-
-            EditorGUI.BeginChangeCheck();
-            
-            List<SceneAsset> newScenes = new (oldScenes.Count);
-            
-            for (int i = 0; i < _sceneList.Count; i++)
-            {
-                EditorGUILayout.BeginHorizontal();
-                SceneAsset newScene = EditorGUILayout.ObjectField(oldScenes[i], typeof(SceneAsset), false) as SceneAsset;
-                if (GUILayout.Button("Remove"))
-                {
-                    //_sceneList.RemoveAt(i);
-                    EditorGUILayout.EndHorizontal();
-                    continue;
-                }
-                newScenes.Add(newScene);
-                EditorGUILayout.EndHorizontal();
-            }
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                _sceneList = newScenes.Select(sceneAsset => new SceneReference(AssetDatabase.GetAssetPath(sceneAsset)))
-                    .ToList();
-            }
-
-            GUILayout.Space(10);
-
-            if (GUILayout.Button("Save"))
-            {
-                SaveSceneList();
-            }
-        }
-        
-        private void SaveSceneList()
-        {
-            ReliableSceneManager.ClearSceneQueue();
-                
-            foreach (SceneReference sceneReference in _sceneList)
-            {
-                if (sceneReference == null)
-                {
-                    Debug.LogWarning("Scene reference is null. Skipping.");
-                    continue;
-                }
-
-                ReliableSceneManager.AddSceneToBuildSettings(sceneReference);
-                ReliableSceneManager.AddSceneToQueue(sceneReference);
-            }
         }
     }
 }

@@ -438,19 +438,17 @@ namespace LRS.SceneManagement
         
         public static void Persist<T>(string key, T data)
         {
-            PersistentData.Set(key, data);
-            SceneUnloaded += scene =>
-            {
-                if (scene == CurrentScene)
-                {
-                    PersistentData.Set(key, data);
-                }
-            };
+            PersistentDataManager.Set(key, data);
         }
         
         public static T GetPersisted<T>(string key)
         {
-            return PersistentData.Get<T>(key);
+            return PersistentDataManager.Get<T>(key);
+        }
+        
+        public static bool TryGetPersisted<T>(string key, out T data)
+        {
+            return PersistentDataManager.TryGet(key, out data);
         }
         
         #endregion

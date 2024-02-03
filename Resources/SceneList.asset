@@ -12,3 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68e0cfc8da404048897b30b10081500c, type: 3}
   m_Name: SceneList
   m_EditorClassIdentifier: 
+  _scenes:
+  - sceneAsset: {fileID: 102900000, guid: 391af578caae47341bbb182829ffa414, type: 3}
+    isDirty: 0
+    scenePath: Assets/_Testing/Scenes/Scene 2.unity
+  - sceneAsset: {fileID: 102900000, guid: 45149e2d30b0cbf49ac9cc4ec6e229b1, type: 3}
+    isDirty: 0
+    scenePath: Assets/_Testing/Scenes/Scene 4.unity
+  - sceneAsset: {fileID: 102900000, guid: 4c573ce028971ea40a2eb0b26a965941, type: 3}
+    isDirty: 0
+    scenePath: Assets/_Testing/Scenes/Scene 5.unity

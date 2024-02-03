@@ -64,7 +64,17 @@ namespace LRS.SceneManagement.Editor
                     }
                     SceneAsset newScene = EditorGUI.ObjectField(rect, oldScene, typeof(SceneAsset), false) as SceneAsset;
                     GUI.backgroundColor = Color.white;
-                    _sceneList[index] = newScene == null ? null : new SceneReference(AssetDatabase.GetAssetPath(newScene));
+                    if (newScene == null)
+                    {
+                        _sceneList[index] = null;
+                    }
+                    else
+                    {
+                        _sceneList[index] = new SceneReference(AssetDatabase.GetAssetPath(newScene));
+                        ReliableSceneManager.AddSceneToBuildSettings(_sceneList[index]);
+                    }
+                    
+                    SceneList.Save();
                 },
                 onAddCallback = _ =>
                 {
@@ -77,6 +87,12 @@ namespace LRS.SceneManagement.Editor
                         ReliableSceneManager.IndexInSceneList--;
                     }
                     _sceneList.RemoveAt(list.index);
+                    
+                    SceneList.Save();
+                },
+                onChangedCallback = _ =>
+                {
+                    SceneList.Save();
                 },
             };
         }

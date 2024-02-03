@@ -31,7 +31,6 @@ namespace LRS.SceneManagement
         }
 
         [SerializeField, HideInInspector] private SerializableDictionary<string, Object> objects = new();
-
         [SerializeField, HideInInspector] private SerializableDictionary<string, object> data = new();
 
         

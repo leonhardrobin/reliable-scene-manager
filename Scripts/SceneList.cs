@@ -29,7 +29,7 @@ namespace LRS.SceneManagement
             }
         }
 
-        private List<SceneReference> _scenes = new();
+        [SerializeField] private List<SceneReference> _scenes = new();
 
         public static List<SceneReference> Scenes
         {
@@ -50,5 +50,7 @@ namespace LRS.SceneManagement
         public static void Insert(int index, SceneReference scene) => Instance._scenes.Insert(index, scene);
 
         public static int IndexOf(SceneReference scene) => Instance._scenes.IndexOf(scene);
+        
+        public static void Save() => EditorUtility.SetDirty(Instance);
     }
 }

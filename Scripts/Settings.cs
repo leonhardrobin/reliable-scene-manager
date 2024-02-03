@@ -35,5 +35,7 @@ namespace LRS.SceneManagement
             get => Instance._debugMode;
             set => Instance._debugMode = value;
         }
+        
+        
     }
 }

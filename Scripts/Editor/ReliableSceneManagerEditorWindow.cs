@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
-using UnityEngine.UIElements;
 
 namespace LRS.SceneManagement.Editor
 {
@@ -53,6 +52,7 @@ namespace LRS.SceneManagement.Editor
             switch (_tabs[_selectedTab])
             {
                 case "Persistent Data":
+                    PersistentDataTab();
                     break;
                 case "Scene Queue":
                     SceneQueueTab();
@@ -61,6 +61,34 @@ namespace LRS.SceneManagement.Editor
                     SettingsTab();
                     break;
             }
+        }
+        
+        private static void PersistentDataTab()
+        {
+            GUILayout.Label("Debugging", EditorStyles.boldLabel);
+
+            if (Application.isPlaying)
+            {
+                GUILayout.Label("Persistent Objects");
+                GUILayout.Space(10);
+                
+                foreach (KeyValuePair<string, Object> pair in PersistentDataManager.Instance.objects)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(pair.Key);
+                    GUILayout.FlexibleSpace();
+                    GUILayout.Label(pair.Value.name);
+                    GUILayout.EndHorizontal();
+                }
+
+                GUILayout.Label("Persistent Values");
+                GUILayout.Space(10);
+            }
+            else
+            {
+                GUILayout.Label("Persistent Objects and Values are only available during play mode.");
+            }
+            
         }
 
         private void SceneQueueTab()

@@ -15,7 +15,7 @@ namespace LRS.SceneManagement
 
         private static readonly Data[] DataArray = new Data[DataSize];
 
-        private static readonly List<string> Keys = new();
+        internal static readonly List<string> Keys = new();
 
         private static int Hash(string key)
         {

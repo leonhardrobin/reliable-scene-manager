@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LRS.Singleton;
 using LRS.Utils;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace LRS.SceneManagement
 {
     internal class PersistentDataManager : PersistentSingleton<PersistentDataManager>
     {
-        [SerializeField, HideInInspector] private SerializableDictionary<string, Object> objects = new();
+        [SerializeField, HideInInspector] public SerializableDictionary<string, Object> objects = new();
 
         public static void PersistObject<T>(string key, T value) where T : Object
         {
@@ -107,6 +108,11 @@ namespace LRS.SceneManagement
         public static void RemovePersistedValue(string key)
         {
             throw new NotImplementedException();
+        }
+        
+        public static List<string> GetKeysOfValues()
+        {
+            return ReferenceHashTable<int>.Keys;
         }
     }
 }

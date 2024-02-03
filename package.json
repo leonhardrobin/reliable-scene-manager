@@ -1,6 +1,6 @@
 {
     "name": "com.lrs.reliable_scene_manager",
-    "version": "0.0.5-preview-2",
+    "version": "0.0.5",
     "displayName": "Reliable Scene Manager",
     "description": "A reliable scene manager for Unity",
     "author": "Leonhard Robin Schnaitl",

@@ -142,11 +142,14 @@ namespace LRS.SceneManagement.Editor
                     if (_sceneQueue[index] != null)
                     {
                         bool isCurrentScene = _sceneQueue[index] == ReliableSceneManager.CurrentScene && ReliableSceneManager.CurrentScene != null;
-                        bool isIndexInSceneQueue = _sceneQueue[index] == _sceneQueue[ReliableSceneManager.IndexInSceneQueue] && _sceneQueue[ReliableSceneManager.IndexInSceneQueue] != null;
+                        bool isNextIndexInSceneQueue =
+                            ReliableSceneManager.NextIndexInSceneQueue < _sceneQueue.Count && 
+                            _sceneQueue[index] == _sceneQueue[ReliableSceneManager.NextIndexInSceneQueue] && 
+                            _sceneQueue[ReliableSceneManager.NextIndexInSceneQueue] != null;
 
                         if (Application.isPlaying)
                         {
-                            if (isIndexInSceneQueue)
+                            if (isNextIndexInSceneQueue)
                             {
                                 GUI.backgroundColor = _indexInSceneQueueColor;
                             }
@@ -176,9 +179,9 @@ namespace LRS.SceneManagement.Editor
                 },
                 onRemoveCallback = list =>
                 {
-                    if (list.index == ReliableSceneManager.IndexInSceneQueue && list.index != 0)
+                    if (list.index == ReliableSceneManager.NextIndexInSceneQueue && list.index != 0)
                     {
-                        ReliableSceneManager.IndexInSceneQueue--;
+                        ReliableSceneManager.NextIndexInSceneQueue--;
                     }
                     _sceneQueue.RemoveAt(list.index);
                     

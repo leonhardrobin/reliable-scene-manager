@@ -28,7 +28,7 @@ namespace LRS.SceneManagement
         /// </summary>
         public static SceneReference CurrentScene { get; private set; }
 
-        internal static int IndexInSceneQueue { get; set; }
+        internal static int NextIndexInSceneQueue { get; set; }
 
         #region Wrapper Properties and Fields for SceneManager
 
@@ -331,18 +331,15 @@ namespace LRS.SceneManagement
                 return;
             }
 
-            if (IndexInSceneQueue >= SceneQueue.Count)
+            if (NextIndexInSceneQueue >= SceneQueue.Count)
             {
                 LogWarning("No more scenes in queue");
                 return;
             }
 
-            LoadScene(SceneQueue.Scenes[IndexInSceneQueue]);
+            LoadScene(SceneQueue.Scenes[NextIndexInSceneQueue]);
 
-            if (IndexInSceneQueue < SceneQueue.Count - 1)
-            {
-                IndexInSceneQueue++;
-            }
+            NextIndexInSceneQueue++;
         }
 
         /// <summary>
@@ -357,21 +354,18 @@ namespace LRS.SceneManagement
                 return null;
             }
 
-            if (IndexInSceneQueue >= SceneQueue.Count)
+            if (NextIndexInSceneQueue >= SceneQueue.Count)
             {
                 LogWarning("No more scenes in queue");
                 return null;
             }
 
-            SceneReference scene = SceneQueue.Scenes[IndexInSceneQueue];
+            SceneReference scene = SceneQueue.Scenes[NextIndexInSceneQueue];
             AsyncOperation operation = LoadSceneAsync(scene);
             operation.completed += _ => { SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.Path)); };
-
-            if (IndexInSceneQueue < SceneQueue.Count - 1)
-            {
-                IndexInSceneQueue++;
-            }
-
+            
+            NextIndexInSceneQueue++;
+            
             return operation;
         }
         
@@ -382,19 +376,9 @@ namespace LRS.SceneManagement
         
         public static SceneReference GetNextSceneInQueue()
         {
-            if (SceneQueue.Count <= 0)
-            {
-                LogWarning("No scenes in queue");
-                return null;
-            }
-
-            if (IndexInSceneQueue >= SceneQueue.Count)
-            {
-                LogWarning("No more scenes in queue");
-                return null;
-            }
-
-            return SceneQueue.Scenes[IndexInSceneQueue];
+            return NextIndexInSceneQueue >= SceneQueue.Count || NextIndexInSceneQueue < 0
+                ? null
+                : SceneQueue.Scenes[NextIndexInSceneQueue];
         }
 
         #endregion
@@ -467,19 +451,59 @@ namespace LRS.SceneManagement
         
         #region Persistent Data
         
-        public static void Persist<T>(string key, T data)
+        public static void PersistObject<T>(string key, T data) where T : UnityEngine.Object
         {
-            PersistentDataManager.Set(key, data);
+            PersistentDataManager.PersistObject(key, data);
         }
         
-        public static T GetPersisted<T>(string key)
+        public static T GetPersistedObject<T>(string key) where T : UnityEngine.Object
         {
-            return PersistentDataManager.Get<T>(key);
+            return PersistentDataManager.GetPersistedObject<T>(key);
         }
         
-        public static bool TryGetPersisted<T>(string key, out T data)
+        public static bool TryGetPersistedObject<T>(string key, out T data) where T : UnityEngine.Object
         {
-            return PersistentDataManager.TryGet(key, out data);
+            return PersistentDataManager.TryGetPersistedObject(key, out data);
+        }
+        
+        public static void PersistValue<T>(string key, ref T data)  where T : unmanaged
+        {
+            PersistentDataManager.PersistValue(key, ref data);
+        }
+        
+        public static void PersistValue(string key, ref string data)
+        {
+            PersistentDataManager.PersistValue(key, ref data);
+        }
+        
+        public static ref T GetPersistedValue<T>(string key) where T : unmanaged
+        {
+            return ref PersistentDataManager.GetPersistedValue<T>(key);
+        }
+        
+        public static string GetPersistedValue(string key)
+        {
+            return PersistentDataManager.GetPersistedValue(key);
+        }
+        
+        public static bool TryGetPersistedValue<T>(string key, out T data) where T : unmanaged
+        {
+            return PersistentDataManager.TryGetPersistedValue(key, out data);
+        }
+        
+        public static bool TryGetPersistedValue(string key, out string data)
+        {
+            return PersistentDataManager.TryGetPersistedValue(key, out data);
+        }
+        
+        public static void RemovePersistedValue<T>(string key) where T : unmanaged
+        {
+            PersistentDataManager.RemovePersistedValue<T>(key);
+        }
+        
+        public static void RemovePersistedValue(string key)
+        {
+            PersistentDataManager.RemovePersistedValue(key);
         }
         
         #endregion

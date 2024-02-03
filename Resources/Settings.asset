@@ -12,3 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d7cc77f6d84486db36ece566ee059f2, type: 3}
   m_Name: Settings
   m_EditorClassIdentifier: 
+  debugMode: 1
+  logEvents: 1
+  logSceneLoaded: 0
+  logSceneUnloaded: 0
+  logSceneSwitched: 1

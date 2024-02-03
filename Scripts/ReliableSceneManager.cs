@@ -28,7 +28,7 @@ namespace LRS.SceneManagement
         /// </summary>
         public static SceneReference CurrentScene { get; private set; }
 
-        internal static int IndexInSceneList { get; set; }
+        internal static int IndexInSceneQueue { get; set; }
 
         #region Wrapper Properties and Fields for SceneManager
 
@@ -232,11 +232,19 @@ namespace LRS.SceneManagement
         private static void OnSceneLoadedHandler(Scene scene, LoadSceneMode mode)
         {
             SceneLoaded?.Invoke(SceneReferenceFrom(scene));
+            
+            if (Settings.LogSceneLoaded)
+                Log($"Scene {scene.name} loaded");
         }
 
         private static void OnSceneUnloadedHandler(Scene scene)
         {
             SceneUnloaded?.Invoke(SceneReferenceFrom(scene));
+
+            CurrentScene = null;
+            
+            if (Settings.LogSceneUnloaded)
+                Log($"Scene {scene.name} unloaded");
         }
 
         private static void OnActiveSceneChangedHandler(Scene previousScene, Scene newScene)
@@ -245,7 +253,8 @@ namespace LRS.SceneManagement
             ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
             CurrentSceneChanged?.Invoke();
 
-            Log($"Active scene changed from {newScene.name} to {CurrentScene.Name}");
+            if (Settings.LogSceneSwitched)
+                Log($"Active scene changed from {newScene.name} to {CurrentScene.Name}");
         }
 
         #endregion
@@ -298,41 +307,41 @@ namespace LRS.SceneManagement
 
         public static void AddSceneToQueue(SceneReference scene)
         {
-            SceneList.Add(scene);
+            SceneQueue.Add(scene);
         }
 
         public static void RemoveSceneFromQueue(SceneReference scene)
         {
-            SceneList.Remove(scene);
+            SceneQueue.Remove(scene);
         }
 
         public static void ClearSceneQueue()
         {
-            SceneList.Clear();
+            SceneQueue.Clear();
         }
 
         /// <summary>
         /// Loads the next scene in the queue. 
         /// </summary>
-        public static void LoadNextSceneInList()
+        public static void LoadNextSceneInQueue()
         {
-            if (SceneList.Count <= 0)
+            if (SceneQueue.Count <= 0)
             {
                 LogWarning("No scenes in queue");
                 return;
             }
 
-            if (IndexInSceneList >= SceneList.Count)
+            if (IndexInSceneQueue >= SceneQueue.Count)
             {
                 LogWarning("No more scenes in queue");
                 return;
             }
 
-            LoadScene(SceneList.Scenes[IndexInSceneList]);
+            LoadScene(SceneQueue.Scenes[IndexInSceneQueue]);
 
-            if (IndexInSceneList < SceneList.Count - 1)
+            if (IndexInSceneQueue < SceneQueue.Count - 1)
             {
-                IndexInSceneList++;
+                IndexInSceneQueue++;
             }
         }
 
@@ -340,30 +349,52 @@ namespace LRS.SceneManagement
         /// Loads the next scene in the queue.
         /// </summary>
         /// <returns>The AsyncOperation loading the scene or null if there is no next scene</returns>
-        public static AsyncOperation LoadNextSceneInListAsync()
+        public static AsyncOperation LoadNextSceneInQueueAsync()
         {
-            if (SceneList.Count <= 0)
+            if (SceneQueue.Count <= 0)
             {
                 LogWarning("No scenes in queue");
                 return null;
             }
 
-            if (IndexInSceneList >= SceneList.Count)
+            if (IndexInSceneQueue >= SceneQueue.Count)
             {
                 LogWarning("No more scenes in queue");
                 return null;
             }
 
-            SceneReference scene = SceneList.Scenes[IndexInSceneList];
+            SceneReference scene = SceneQueue.Scenes[IndexInSceneQueue];
             AsyncOperation operation = LoadSceneAsync(scene);
             operation.completed += _ => { SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.Path)); };
 
-            if (IndexInSceneList < SceneList.Count - 1)
+            if (IndexInSceneQueue < SceneQueue.Count - 1)
             {
-                IndexInSceneList++;
+                IndexInSceneQueue++;
             }
 
             return operation;
+        }
+        
+        public static SceneReference GetSceneInQueue(int index)
+        {
+            return SceneQueue.Scenes[index];
+        }
+        
+        public static SceneReference GetNextSceneInQueue()
+        {
+            if (SceneQueue.Count <= 0)
+            {
+                LogWarning("No scenes in queue");
+                return null;
+            }
+
+            if (IndexInSceneQueue >= SceneQueue.Count)
+            {
+                LogWarning("No more scenes in queue");
+                return null;
+            }
+
+            return SceneQueue.Scenes[IndexInSceneQueue];
         }
 
         #endregion

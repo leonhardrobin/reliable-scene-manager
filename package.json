@@ -3,5 +3,8 @@
     "version": "0.0.5-preview-2",
     "displayName": "Reliable Scene Manager",
     "description": "A reliable scene manager for Unity",
-    "author": "Leonhard Robin Schnaitl"
+    "author": "Leonhard Robin Schnaitl",
+    "dependencies": {
+        "com.lrs.tools": "https://github.com/leonhardrobin/unity-tools.git"
+    }
 }

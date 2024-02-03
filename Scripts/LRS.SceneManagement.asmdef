@@ -1,7 +1,9 @@
 {
     "name": "SceneManagement",
     "rootNamespace": "LRS",
-    "references": [],
+    "references": [
+        "GUID:92ec0f520b510e6459714961103ab000"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

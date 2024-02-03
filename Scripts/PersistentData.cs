@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using LRS.Utils;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -33,30 +34,55 @@ namespace LRS.SceneManagement
 
         [SerializeField, HideInInspector] private SerializableDictionary<string, object> data = new();
 
+        
+        // if the value is a gameobject or component on one then we mark it as DontDestroyOnLoad
+        
         public static void Set<T>(string key, T value)
         {
-            bool isObject = value is Object;
 
-            if (isObject)
+            if (value is Object obj)
             {
-                Instance.objects[key] = value as Object;
 
-                switch (value)
+                UnityMessageCallbacks callbacks = obj switch
                 {
-                    case GameObject go:
-                        var callbacks = go.GetOrAdd<UnityMessageCallbacks>();
-                        callbacks.onDestroy += obj =>
-                        {
-                            Instance.objects[key] = Instantiate(go);
-                        };
-                        break;
-                    case Component component:
-                        break;
-                }
+                    GameObject go => go.GetOrAdd<UnityMessageCallbacks>(),
+                    Component component => component.gameObject.GetOrAdd<UnityMessageCallbacks>(),
+                    _ => null
+                };
+
+                DontDestroyOnLoad(callbacks);
+                Instance.objects[key] = obj;
+                
             }
             else
             {
                 Instance.data[key] = value;
+            }
+        }
+        
+        public static void UnSet(string key)
+        {
+            if (Instance.objects.ContainsKey(key))
+            {
+                Object obj = Instance.objects[key];
+                if (obj is GameObject go)
+                {
+                    UnityMessageCallbacks callbacks = go.GetOrAdd<UnityMessageCallbacks>();
+                    Destroy(callbacks);
+                }
+                else if (obj is Component component)
+                {
+                    UnityMessageCallbacks callbacks = component.gameObject.GetOrAdd<UnityMessageCallbacks>();
+                    Destroy(callbacks);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                Instance.data.Remove(key);
             }
         }
 
@@ -78,17 +104,6 @@ namespace LRS.SceneManagement
             }
 
             return default;
-        }
-    }
-
-    public static class Extensions
-    {
-        public static T GetOrAdd<T>(this GameObject gameObject) where T : Component
-        {
-            T component = gameObject.GetComponent<T>();
-            if (!component) component = gameObject.AddComponent<T>();
-
-            return component;
         }
     }
 }

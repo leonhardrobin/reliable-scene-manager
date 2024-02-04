@@ -72,7 +72,7 @@ namespace LRS.SceneManagement.Editor
                 GUILayout.Label("Persistent Objects");
                 GUILayout.Space(10);
                 
-                foreach (KeyValuePair<string, Object> pair in PersistentDataManager.Instance.objects)
+                foreach (KeyValuePair<string, Object> pair in PersistentDataManager.Objects)
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label(pair.Key);

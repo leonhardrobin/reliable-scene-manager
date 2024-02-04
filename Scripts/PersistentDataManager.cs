@@ -9,11 +9,11 @@ namespace LRS.SceneManagement
 {
     internal class PersistentDataManager : PersistentSingleton<PersistentDataManager>
     {
-        [SerializeField, HideInInspector] public SerializableDictionary<string, Object> objects = new();
+        public static readonly Dictionary<string, Object> Objects = new();
 
         public static void PersistObject<T>(string key, T value) where T : Object
         {
-            if (Instance.objects.ContainsKey(key))
+            if (Objects.ContainsKey(key))
             {
                 Logger.LogWarning($"Key '{key}' already exists in the persistent data manager. Overwriting the value.");
             }
@@ -30,8 +30,8 @@ namespace LRS.SceneManagement
                 callbacks.onDestroy += () =>
                 {
                     if (!Application.isPlaying) return;
-                    if (HasInstance && Instance.objects.ContainsKey(key))
-                        Instance.objects.Remove(key);
+                    if (HasInstance && Objects.ContainsKey(key))
+                        Objects.Remove(key);
                 };
 
                 DontDestroyOnLoad(callbacks.gameObject);
@@ -42,14 +42,14 @@ namespace LRS.SceneManagement
                                   $"\nObject will not be automatically removed from the persistent data manager.");
             }
 
-            Instance.objects[key] = value;
+            Objects[key] = value;
         }
 
         public static bool TryGetPersistedObject<T>(string key, out T value) where T : Object
         {
-            if (Instance.objects.ContainsKey(key))
+            if (Objects.TryGetValue(key, out Object obj))
             {
-                value = Instance.objects[key] as T;
+                value = obj as T;
                 return true;
             }
 
@@ -59,9 +59,9 @@ namespace LRS.SceneManagement
 
         public static T GetPersistedObject<T>(string key) where T : Object
         {
-            if (Instance.objects.ContainsKey(key))
+            if (Objects.ContainsKey(key))
             {
-                return Instance.objects[key] is T ? (T)Instance.objects[key] : null;
+                return Objects[key] is T ? (T)Objects[key] : null;
             }
 
             Logger.LogWarning($"Key '{key}' does not exist in the persistent data manager." +
@@ -74,7 +74,7 @@ namespace LRS.SceneManagement
         {
             ReferenceHashTable<T>.SetData(key, ref value);
         }
-
+        
         public static void PersistValue(string key, ref string value)
         {
             throw new NotImplementedException();

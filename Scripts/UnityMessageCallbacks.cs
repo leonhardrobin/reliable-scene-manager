@@ -9,7 +9,7 @@ namespace LRS.SceneManagement
         public Action onAwake;
         public Action onStart;
         public Action onUpdate;
-        public Action<GameObject> onDestroy;
+        public Action onDestroy;
         public Action onDisable;
 
         private void OnEnable() => onEnable?.Invoke();
@@ -20,7 +20,7 @@ namespace LRS.SceneManagement
 
         private void Update() => onUpdate?.Invoke();
 
-        private void OnDestroy() => onDestroy?.Invoke(gameObject);
+        private void OnDestroy() => onDestroy?.Invoke();
 
         private void OnDisable() => onDisable?.Invoke();
     }

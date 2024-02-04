@@ -27,7 +27,7 @@ namespace LRS.SceneManagement
 
             if (callbacks != null)
             {
-                callbacks.onDestroy += _ =>
+                callbacks.onDestroy += () =>
                 {
                     if (!Application.isPlaying) return;
                     if (HasInstance && Instance.objects.ContainsKey(key))

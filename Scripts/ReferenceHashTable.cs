@@ -124,5 +124,18 @@ namespace LRS.SceneManagement
                 Logger.Log($"Data for key '{key}' has been removed.");
             }
         }
+
+        public static void Clear()
+        {
+            for (int i = 0; i < DataSize; i++)
+            {
+                DataArray[i].Key = null;
+                DataArray[i].DataPointer = null;
+            }
+
+            Keys.Clear();
+
+            Logger.Log("All data has been removed.");
+        }
     }
 }

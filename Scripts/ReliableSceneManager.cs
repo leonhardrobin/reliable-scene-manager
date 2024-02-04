@@ -422,7 +422,6 @@ namespace LRS.SceneManagement
         {
             if (scene == null)
             {
-                LogError("Scene is null");
                 return -1;
             }
 
@@ -441,6 +440,15 @@ namespace LRS.SceneManagement
                 return scene.BuildIndex;
             }
 
+            if (Application.isPlaying)
+            {
+                LogError($"Scene \"{scene.Name}\" is not in the build settings. Cannot add scene automatically during play mode.\n" +
+                         "Scenes will only be added to the build settings automatically, if not in play mode.");
+                return -1;
+            }
+            
+            Log($"Adding scene \"{scene.Name}\" to the build settings.");
+            
             EditorBuildSettings.scenes = EditorBuildSettings.scenes.Concat(newScenes).ToArray();
 
             return scene.BuildIndex;

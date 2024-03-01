@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using LRS.Singleton;
+using System.Linq;
 using LRS.Utils;
 using UnityEngine;
+using static LRS.SceneManagement.Logger;
 using Object = UnityEngine.Object;
 
 namespace LRS.SceneManagement
 {
-    internal class PersistentDataManager : PersistentSingleton<PersistentDataManager>
+    internal abstract class PersistentDataManager
     {
         public static readonly Dictionary<string, Object> Objects = new();
 
@@ -15,7 +16,7 @@ namespace LRS.SceneManagement
         {
             if (Objects.ContainsKey(key))
             {
-                Logger.LogWarning($"Key '{key}' already exists in the persistent data manager. Overwriting the value.");
+                LogWarning($"Key '{key}' already exists in the persistent data manager. Overwriting the value.");
             }
 
             UnityMessageCallbacks callbacks = value switch
@@ -30,15 +31,15 @@ namespace LRS.SceneManagement
                 callbacks.onDestroy += () =>
                 {
                     if (!Application.isPlaying) return;
-                    if (HasInstance && Objects.ContainsKey(key))
+                    if (Objects.ContainsKey(key))
                         Objects.Remove(key);
                 };
 
-                DontDestroyOnLoad(callbacks.gameObject);
+                Object.DontDestroyOnLoad(callbacks.gameObject);
             }
             else
             {
-                Logger.LogWarning($"Object is not of type GameObject or Component. ({typeof(T).Name})" +
+                LogWarning($"Object is not of type GameObject or Component. ({typeof(T).Name})" +
                                   $"\nObject will not be automatically removed from the persistent data manager.");
             }
 
@@ -64,7 +65,7 @@ namespace LRS.SceneManagement
                 return Objects[key] is T ? (T)Objects[key] : null;
             }
 
-            Logger.LogWarning($"Key '{key}' does not exist in the persistent data manager." +
+            LogWarning($"Key '{key}' does not exist in the persistent data manager." +
                               $"\nUse {nameof(ReliableSceneManager.TryGetPersistedObject)} instead.");
 
             return default;
@@ -72,7 +73,15 @@ namespace LRS.SceneManagement
 
         public static void PersistValue<T>(string key, ref T value) where T : unmanaged
         {
-            ReferenceHashTable<T>.SetData(key, ref value);
+            if (PointerDictionary<T>.Add(key, ref value))
+            {
+                Log($"Persisted value '{key}' of type '{typeof(T).Name}'");
+            }
+            else
+            {
+                LogWarning($"Key '{key}' could not be added to the persistent data manager." +
+                                  $"\nKey already exists in the persistent data manager.");
+            }
         }
         
         public static void PersistValue(string key, ref string value)
@@ -82,7 +91,7 @@ namespace LRS.SceneManagement
 
         public static ref T GetPersistedValue<T>(string key) where T : unmanaged
         {
-            return ref ReferenceHashTable<T>.GetData(key);
+            return ref PointerDictionary<T>.Get(key);
         }
         
         public static string GetPersistedValue(string key)
@@ -92,7 +101,7 @@ namespace LRS.SceneManagement
         
         public static bool TryGetPersistedValue<T>(string key, out T value) where T : unmanaged
         {
-            return ReferenceHashTable<T>.TryGetData(key, out value);
+            return PointerDictionary<T>.TryGet(key, out value);
         }
         
         public static bool TryGetPersistedValue(string key, out string value)
@@ -102,7 +111,7 @@ namespace LRS.SceneManagement
         
         public static void RemovePersistedValue<T>(string key) where T : unmanaged
         {
-            ReferenceHashTable<T>.RemoveData(key);
+            PointerDictionary<T>.RemoveData(key);
         }
         
         public static void RemovePersistedValue(string key)
@@ -110,9 +119,14 @@ namespace LRS.SceneManagement
             throw new NotImplementedException();
         }
         
-        public static List<string> GetKeysOfValues()
+        public static Dictionary<string, T> GetValueDictionary<T>() where T : unmanaged
         {
-            return ReferenceHashTable<int>.Keys;
+            return PointerDictionary<T>.ToDictionary();
+        }
+        
+        public static List<string> GetValueKeys<T>() where T : unmanaged
+        {
+            return PointerDictionary<T>.Pointers.Keys.ToList();
         }
     }
 }

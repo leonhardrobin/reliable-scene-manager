@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
@@ -65,28 +66,46 @@ namespace LRS.SceneManagement.Editor
         
         private static void PersistentDataTab()
         {
-            GUILayout.Label("Debugging", EditorStyles.boldLabel);
-
             if (Application.isPlaying)
             {
-                GUILayout.Label("Persistent Objects");
+                GUILayout.Label("Persistent Objects", EditorStyles.boldLabel);
                 GUILayout.Space(10);
                 
                 foreach (KeyValuePair<string, Object> pair in PersistentDataManager.Objects)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(pair.Key);
+                    GUILayout.Label(pair.Key, EditorStyles.whiteLabel);
                     GUILayout.FlexibleSpace();
                     GUILayout.Label(pair.Value.name);
                     GUILayout.EndHorizontal();
                 }
+                
+                
+                GUILayout.Space(30);
 
-                GUILayout.Label("Persistent Values");
+                GUILayout.Label("Persistent Values", EditorStyles.boldLabel);
                 GUILayout.Space(10);
+                
+                List<string> keys = PersistentDataManager.GetValueKeys<int>().ToList();
+                keys.AddRange(PersistentDataManager.GetValueKeys<float>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<double>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<short>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<long>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<byte>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<bool>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<char>());
+                keys.AddRange(PersistentDataManager.GetValueKeys<decimal>());
+                
+                
+                foreach (string key in keys)
+                {
+                    GUILayout.Label(key, EditorStyles.whiteLabel);
+                }
+                
             }
             else
             {
-                GUILayout.Label("Persistent Objects and Values are only available during play mode.");
+                GUILayout.Label("Persistent Objects and Values are only available during play mode.", EditorStyles.boldLabel);
             }
             
         }
@@ -104,11 +123,6 @@ namespace LRS.SceneManagement.Editor
             
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Clear", style,
-                GUILayout.Height(30), GUILayout.Width(150)))
-            {
-                SceneQueue.Clear();
-            }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 

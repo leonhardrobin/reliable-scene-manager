@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace LRS.SceneManagement
 {
@@ -33,11 +32,7 @@ namespace LRS.SceneManagement
 
         [SerializeField, HideInInspector] private List<SceneReference> scenes = new();
 
-        public static List<SceneReference> Scenes
-        {
-            get => Instance.scenes;
-            set => Instance.scenes = value;
-        }
+        public static List<SceneReference> Scenes => Instance.scenes;
 
         public static int Count => Instance.scenes.Count;
 

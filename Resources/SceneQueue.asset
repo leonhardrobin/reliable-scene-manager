@@ -19,9 +19,3 @@ MonoBehaviour:
   - sceneAsset: {fileID: 102900000, guid: 5132de2bde24ee9458f8fb3214efe52f, type: 3}
     isDirty: 0
     scenePath: Assets/_Testing/Scenes/Scene 3.unity
-  - sceneAsset: {fileID: 102900000, guid: e265481bb385f9c4381b926136439815, type: 3}
-    isDirty: 0
-    scenePath: Assets/_Testing/Scenes/Scene 6.unity
-  - sceneAsset: {fileID: 102900000, guid: bad084cc5883d4845a6c6ee7e48a1e90, type: 3}
-    isDirty: 0
-    scenePath: Assets/_Testing/Scenes/Scene 7.unity

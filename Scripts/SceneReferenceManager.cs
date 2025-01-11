@@ -4,31 +4,17 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static LRS.SceneManagement.Logger;
 
 namespace LRS.SceneManagement
 {
-    public static class ReliableSceneManager
+    public static class SceneReferenceManager
     {
-        static ReliableSceneManager()
+        static SceneReferenceManager()
         {
             SceneManager.sceneLoaded += OnSceneLoadedHandler;
             SceneManager.sceneUnloaded += OnSceneUnloadedHandler;
             SceneManager.activeSceneChanged += OnActiveSceneChangedHandler;
         }
-
-        /// <summary>
-        /// To get the current scene, use the <see cref="CurrentScene"/> property instead.
-        /// </summary>
-        public static event Action CurrentSceneChanged;
-
-        /// <summary>
-        /// This is the current scene that is loaded.
-        /// If multiple scenes are loaded, this will be the active scene.
-        /// </summary>
-        public static SceneReference CurrentScene { get; private set; }
-
-        internal static int NextIndexInSceneQueue { get; set; }
 
         #region Wrapper Properties and Fields for SceneManager
 
@@ -114,7 +100,6 @@ namespace LRS.SceneManagement
         public static void LoadScene(SceneReference scene, LoadSceneParameters parameters)
         {
             SceneManager.LoadScene(scene.Path, parameters);
-            CurrentScene = scene;
         }
 
         public static void LoadScene(string sceneName, LoadSceneParameters parameters)
@@ -232,29 +217,16 @@ namespace LRS.SceneManagement
         private static void OnSceneLoadedHandler(Scene scene, LoadSceneMode mode)
         {
             SceneLoaded?.Invoke(SceneReferenceFrom(scene));
-            
-            if (Settings.LogSceneLoaded)
-                Log($"Scene {scene.name} loaded");
         }
 
         private static void OnSceneUnloadedHandler(Scene scene)
         {
             SceneUnloaded?.Invoke(SceneReferenceFrom(scene));
-
-            CurrentScene = null;
-            
-            if (Settings.LogSceneUnloaded)
-                Log($"Scene {scene.name} unloaded");
         }
 
         private static void OnActiveSceneChangedHandler(Scene previousScene, Scene newScene)
         {
-            CurrentScene = SceneReferenceFrom(newScene);
-            ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), CurrentScene);
-            CurrentSceneChanged?.Invoke();
-
-            if (Settings.LogSceneSwitched)
-                Log($"Active scene changed from {newScene.name} to {CurrentScene.Name}");
+            ActiveSceneChanged?.Invoke(SceneReferenceFrom(previousScene), SceneReferenceFrom(newScene));
         }
 
         #endregion
@@ -300,86 +272,6 @@ namespace LRS.SceneManagement
             SceneManager.GetSceneByBuildIndex(sceneBuildIndex).IsValid();
 
         public static bool IsSceneLoadedInHierarchy(SceneReference scene) => GetLoadedScenes().Contains(scene);
-
-        #endregion
-
-        #region Scene List
-
-        public static void AddSceneToQueue(SceneReference scene)
-        {
-            SceneQueue.Add(scene);
-        }
-
-        public static void RemoveSceneFromQueue(SceneReference scene)
-        {
-            SceneQueue.Remove(scene);
-        }
-
-        public static void ClearSceneQueue()
-        {
-            SceneQueue.Clear();
-        }
-
-        /// <summary>
-        /// Loads the next scene in the queue. 
-        /// </summary>
-        public static void LoadNextSceneInQueue()
-        {
-            if (SceneQueue.Count <= 0)
-            {
-                LogWarning("No scenes in queue");
-                return;
-            }
-
-            if (NextIndexInSceneQueue >= SceneQueue.Count)
-            {
-                LogWarning("No more scenes in queue");
-                return;
-            }
-
-            LoadScene(SceneQueue.Scenes[NextIndexInSceneQueue]);
-
-            NextIndexInSceneQueue++;
-        }
-
-        /// <summary>
-        /// Loads the next scene in the queue.
-        /// </summary>
-        /// <returns>The AsyncOperation loading the scene or null if there is no next scene</returns>
-        public static AsyncOperation LoadNextSceneInQueueAsync()
-        {
-            if (SceneQueue.Count <= 0)
-            {
-                LogWarning("No scenes in queue");
-                return null;
-            }
-
-            if (NextIndexInSceneQueue >= SceneQueue.Count)
-            {
-                LogWarning("No more scenes in queue");
-                return null;
-            }
-
-            SceneReference scene = SceneQueue.Scenes[NextIndexInSceneQueue];
-            AsyncOperation operation = LoadSceneAsync(scene);
-            operation.completed += _ => { SceneManager.SetActiveScene(SceneManager.GetSceneByPath(scene.Path)); };
-            
-            NextIndexInSceneQueue++;
-            
-            return operation;
-        }
-        
-        public static SceneReference GetSceneInQueue(int index)
-        {
-            return SceneQueue.Scenes[index];
-        }
-        
-        public static SceneReference GetNextSceneInQueue()
-        {
-            return NextIndexInSceneQueue >= SceneQueue.Count || NextIndexInSceneQueue < 0
-                ? null
-                : SceneQueue.Scenes[NextIndexInSceneQueue];
-        }
 
         #endregion
 
@@ -442,12 +334,12 @@ namespace LRS.SceneManagement
 
             if (Application.isPlaying)
             {
-                LogError($"Scene \"{scene.Name}\" is not in the build settings. Cannot add scene automatically during play mode.\n" +
+                Debug.LogError($"Scene \"{scene.Name}\" is not in the build settings. Cannot add scene automatically during play mode.\n" +
                          "Scenes will only be added to the build settings automatically, if not in play mode.");
                 return -1;
             }
             
-            Log($"Adding scene \"{scene.Name}\" to the build settings.");
+            Debug.Log($"Adding scene \"{scene.Name}\" to the build settings.");
             
             EditorBuildSettings.scenes = EditorBuildSettings.scenes.Concat(newScenes).ToArray();
 
@@ -455,65 +347,6 @@ namespace LRS.SceneManagement
         }
 #endif
 
-        #endregion
-        
-        #region Persistent Data
-        
-        public static void PersistObject<T>(string key, T data) where T : UnityEngine.Object
-        {
-            PersistentDataManager.PersistObject(key, data);
-        }
-        
-        public static T GetPersistedObject<T>(string key) where T : UnityEngine.Object
-        {
-            return PersistentDataManager.GetPersistedObject<T>(key);
-        }
-        
-        public static bool TryGetPersistedObject<T>(string key, out T data) where T : UnityEngine.Object
-        {
-            return PersistentDataManager.TryGetPersistedObject(key, out data);
-        }
-        
-        public static void PersistValue<T>(string key, ref T data)  where T : unmanaged
-        {
-            PersistentDataManager.PersistValue(key, ref data);
-        }
-        
-        public static void PersistValue(string key, ref string data)
-        {
-            PersistentDataManager.PersistValue(key, ref data);
-        }
-        
-        public static ref T GetPersistedValue<T>(string key) where T : unmanaged
-        {
-            return ref PersistentDataManager.GetPersistedValue<T>(key);
-        }
-        
-        public static string GetPersistedValue(string key)
-        {
-            return PersistentDataManager.GetPersistedValue(key);
-        }
-        
-        public static bool TryGetPersistedValue<T>(string key, out T data) where T : unmanaged
-        {
-            return PersistentDataManager.TryGetPersistedValue(key, out data);
-        }
-        
-        public static bool TryGetPersistedValue(string key, out string data)
-        {
-            return PersistentDataManager.TryGetPersistedValue(key, out data);
-        }
-        
-        public static void RemovePersistedValue<T>(string key) where T : unmanaged
-        {
-            PersistentDataManager.RemovePersistedValue<T>(key);
-        }
-        
-        public static void RemovePersistedValue(string key)
-        {
-            PersistentDataManager.RemovePersistedValue(key);
-        }
-        
         #endregion
     }
 }
